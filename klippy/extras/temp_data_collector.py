@@ -567,7 +567,7 @@ class TemperatureDataCollector:
         # 解析参数
         heater_name = gcmd.get("HEATER", "extruder")
         temp_points = gcmd.get("TEMP_POINTS", "50,100,150,200,250,300")
-        stability_tolerance = gcmd.get_float("TOLERANCE", 0.1, above=0.0)
+        stability_tolerance = gcmd.get_float("TOLERANCE", 1, above=0.0)
         stability_duration = gcmd.get_float("DURATION", 180.0, above=0.0)
         filename = gcmd.get(
             "FILENAME", f"steady_state_{int(time.time())}.csv"
