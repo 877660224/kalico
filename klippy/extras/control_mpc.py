@@ -385,30 +385,35 @@ class MpcCalibrate:
         home_dir = os.path.expanduser("~")
         data_dir = os.path.join(home_dir, "printer_data", "data")
         
-        # Create directory if it doesn't exist
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+        # Create directory if it doesn't exist (including parent directories)
+        os.makedirs(data_dir, exist_ok=True)
         
         # Generate filename with timestamp
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = f"nenocontrol{timestamp}.csv"
+        filename = f"nenocontrol_{self.heater.get_name()}_{timestamp}.csv"
         file_path = os.path.join(data_dir, filename)
         
-        # Write data to CSV
-        with open(file_path, 'w') as f:
-            # Write header
-            f.write("time,temperature\n")
+        try:
+            # Write data to CSV
+            with open(file_path, 'w') as f:
+                # Write header
+                f.write("time,temperature\n")
+                
+                # Write data - convert to relative time if we have samples
+                if samples:
+                    start_time = samples[0][0]
+                    for t, temp in samples:
+                        rel_time = t - start_time
+                        f.write(f"{rel_time:.3f},{temp:.2f}\n")
+                else:
+                    logging.warning("No samples to save in save_heatup_data")
             
-            # Write data - convert to relative time if we have samples
-            if samples:
-                start_time = samples[0][0]
-                for t, temp in samples:
-                    rel_time = t - start_time
-                    f.write(f"{rel_time:.3f},{temp:.2f}\n")
-        
-        # Log and respond to user
-        logging.info(f"Heatup data saved to: {file_path}")
-        gcmd.respond_info(f"Heatup test data saved to {file_path}")
+            # Log and respond to user
+            logging.info(f"Heatup data saved to: {file_path}")
+            gcmd.respond_info(f"Heatup test data saved to {file_path}")
+        except Exception as e:
+            logging.error(f"Failed to save heatup data: {e}")
+            gcmd.respond_info(f"Warning: Failed to save heatup data: {e}")
         
     def run(self, gcmd):
         use_analytic = gcmd.get("USE_DELTA", None) is not None

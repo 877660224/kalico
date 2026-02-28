@@ -1,0 +1,435 @@
+# 温度数据采集模块
+
+## 模块概述
+
+温度数据采集模块 (`temp_data_collector.py`) 是专为3D打印机加热系统热参数辨识而设计的数据采集工具。该模块提供两种实验方法用于全面表征加热系统的热学特性：
+
+### 实验方法
+
+1. **稳态阶梯响应实验 (Steady-State Staircase Characterization)**
+   - **目的**：分离并量化系统的静态热损耗参数
+   - **辨识参数**：
+     - 线性散热系数 $K_{lin}$（包含对流和喉管传导）
+     - 非线性辐射系数 $K_{rad}$（即 $\varepsilon \sigma A$）
+   - **原理**：在热平衡状态下，温度变化率为零（$dT/dt = 0$），输入功率完全等于散热功率
+
+2. **高频动态激励实验 (PRBS Dynamic Excitation)**
+   - **目的**：辨识系统的动态惯性参数
+   - **辨识参数**：
+     - 各节点热容 $C_h, C_b, C_s$
+     - 节点间接触热阻 $R_{hb}, R_{bs}$
+   - **原理**：通过伪随机二进制序列激发系统的频率响应特性
+
+---
+
+## 热学模型
+
+### 热损耗模型
+
+总热损耗可建模为线性项（对流+传导）与非线性项（辐射）之和：
+
+$$P_{loss} = K_{lin} \cdot (T - T_{amb}) + K_{rad} \cdot (T^4 - T_{amb}^4)$$
+
+其中：
+- $P_{loss}$：热损耗功率 (W)
+- $K_{lin}$：线性散热系数 (W/K)
+- $K_{rad}$：辐射系数 (W/K⁴)，等于 $\varepsilon \sigma A$
+- $T$：绝对温度 (K)
+- $T_{amb}$：环境温度 (K)
+
+### 多节点热网络模型
+
+```
+[加热芯] --R_hb--> [加热块] --R_bs--> [传感器]
+    |                  |                  |
+  C_h                C_b                C_s
+    |                  |                  |
+ 热损耗             热损耗             热损耗
+```
+
+参数说明：
+- $C_h, C_b, C_s$：加热芯、加热块、传感器的热容 (J/K)
+- $R_{hb}, R_{bs}$：节点间的接触热阻 (K/W)
+
+---
+
+## 安装配置
+
+### 配置示例
+
+在 `printer.cfg` 中添加以下配置：
+
+```ini
+[temp_data_collector]
+# 数据存储目录（支持 ~ 展开为用户主目录）
+data_dir: ~/printer_data/temp_data
+# 默认采样频率 (Hz)
+sample_rate: 10.0
+# 加热器最大功率 (W)，用于PWM转功率计算
+max_heater_power: 60.0
+```
+
+### 配置参数说明
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `data_dir` | `~/printer_data/temp_data` | 数据文件存储目录 |
+| `sample_rate` | `10.0` | 默认采样频率 (Hz) |
+| `max_heater_power` | `60.0` | 加热器额定功率 (W) |
+
+---
+
+## G-Code 命令参考
+
+### TEMP_DATA_COLLECT - 启动手动数据采集
+
+启动温度数据的实时采集，适用于自定义实验场景。
+
+**语法：**
+```
+TEMP_DATA_COLLECT [HEATER=<加热器名>] [SAMPLE_RATE=<采样率>] [EXPERIMENT=<实验名>]
+```
+
+**参数：**
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `HEATER` | `extruder` | 加热器名称 |
+| `SAMPLE_RATE` | 配置值 | 采样频率 (Hz) |
+| `EXPERIMENT` | `manual_collection` | 实验标识名称 |
+
+**示例：**
+```gcode
+TEMP_DATA_COLLECT HEATER=extruder SAMPLE_RATE=20 EXPERIMENT=manual_test
+```
+
+---
+
+### TEMP_DATA_STOP - 停止采集并保存数据
+
+停止当前数据采集任务并将数据保存到CSV文件。
+
+**语法：**
+```
+TEMP_DATA_STOP [FILENAME=<文件名>]
+```
+
+**参数：**
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `FILENAME` | `temp_data_<时间戳>.csv` | 输出文件名 |
+
+**示例：**
+```gcode
+TEMP_DATA_STOP FILENAME=my_experiment.csv
+```
+
+---
+
+### TEMP_DATA_STATUS - 查看采集状态
+
+显示当前数据采集器的运行状态。
+
+**语法：**
+```
+TEMP_DATA_STATUS
+```
+
+**输出信息：**
+- 当前状态（采集中/空闲）
+- 当前实验名称
+- 已采集样本数
+- 采样率
+- 数据存储目录
+
+---
+
+### STEADY_STATE_CALIBRATE - 稳态阶梯响应实验
+
+运行稳态阶梯响应校准实验，测量不同温度点下的平衡功率。
+
+**原理说明：**
+
+在热平衡状态下，$dT/dt = 0$，此时：
+$$P_{in} = P_{loss}(T) = K_{lin} \cdot (T - T_{amb}) + K_{rad} \cdot (T^4 - T_{amb}^4)$$
+
+通过测量多个温度点的平衡功率，可以分离出线性散热系数和辐射系数。
+
+**语法：**
+```
+STEADY_STATE_CALIBRATE [HEATER=<加热器>] [TEMP_POINTS=<温度点>] 
+                       [TOLERANCE=<容差>] [DURATION=<持续时间>] 
+                       [FILENAME=<文件名>]
+```
+
+**参数：**
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `HEATER` | `extruder` | 加热器名称 |
+| `TEMP_POINTS` | `50,100,150,200,250,300` | 温度设定点序列 (°C) |
+| `TOLERANCE` | `0.1` | 稳定性判断容差 (°C) |
+| `DURATION` | `180` | 稳定持续时间要求 (秒) |
+| `FILENAME` | 自动生成 | 输出文件名 |
+
+**示例：**
+```gcode
+; 标准校准（覆盖常用温度范围）
+STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300
+
+; 高温校准（适用于高温打印）
+STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300,350,400,450 DURATION=180
+```
+
+**输出文件：**
+- `<filename>`：原始时序数据
+- `<filename>_results.csv`：各温度点的汇总结果
+
+---
+
+### PRBS_CALIBRATE - PRBS动态激励实验
+
+运行伪随机二进制序列动态激励实验，辨识系统的动态热参数。
+
+**原理说明：**
+
+PRBS信号包含丰富的频率成分：
+- **短脉冲（0.2-1秒）**：激发小热容节点（加热芯）的快速响应
+- **长脉冲（5-20秒）**：让热量有足够时间穿透接触热阻，反映整体热容和传导滞后
+
+该信号满足系统辨识理论中的"持续激励条件"，保证辨识结果收敛且唯一。
+
+**语法：**
+```
+PRBS_CALIBRATE [HEATER=<加热器>] [DURATION=<总时长>] 
+               [MIN_PULSE=<最小脉宽>] [MAX_PULSE=<最大脉宽>]
+               [POWER_LEVELS=<功率电平>] [SAMPLE_RATE=<采样率>]
+               [FILENAME=<文件名>]
+```
+
+**参数：**
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `HEATER` | `extruder` | 加热器名称 |
+| `DURATION` | `300` | 实验总时长 (秒) |
+| `MIN_PULSE` | `0.2` | 最小脉冲宽度 (秒) |
+| `MAX_PULSE` | `10.0` | 最大脉冲宽度 (秒) |
+| `POWER_LEVELS` | `0.0,1.0` | 功率电平序列 (0.0-1.0) |
+| `SAMPLE_RATE` | `20.0` | 采样频率 (Hz) |
+| `FILENAME` | 自动生成 | 输出文件名 |
+
+**示例：**
+```gcode
+; 标准PRBS实验
+PRBS_CALIBRATE HEATER=extruder DURATION=300 MIN_PULSE=0.2 MAX_PULSE=10
+
+; 扩展实验（更长时长，多功率电平）
+PRBS_CALIBRATE HEATER=extruder DURATION=600 MIN_PULSE=0.2 MAX_PULSE=15 POWER_LEVELS=0.0,0.5,1.0 SAMPLE_RATE=20
+```
+
+---
+
+### ESTIMATE_THERMAL_PARAMS - 估计热参数
+
+从采集的数据估计热学参数。
+
+**语法：**
+```
+ESTIMATE_THERMAL_PARAMS DATA_FILE=<数据文件> [METHOD=<方法>]
+```
+
+**参数：**
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `DATA_FILE` | 必填 | 数据文件路径 |
+| `METHOD` | `steady_state` | 估计方法 |
+
+**估计方法：**
+| 方法 | 说明 |
+|------|------|
+| `steady_state` | 从稳态数据估计 $K_{lin}$ 和 $K_{rad}$ |
+| `prbs` | 加载PRBS数据并提供分析建议 |
+
+**示例：**
+```gcode
+ESTIMATE_THERMAL_PARAMS DATA_FILE=~/printer_data/temp_data/steady_state_xxx.csv METHOD=steady_state
+```
+
+---
+
+## 数据输出格式
+
+### 时序数据文件 (CSV)
+
+| 列名 | 数据类型 | 说明 |
+|------|----------|------|
+| `time` | float | 相对时间（秒，从实验开始计时） |
+| `temperature` | float | 当前温度 (°C) |
+| `pwm` | float | PWM占空比 (0.0-1.0) |
+| `target` | float | 目标温度 (°C) |
+| `power_watts` | float | 计算功率 (W) |
+| `experiment` | string | 实验名称 |
+
+### 稳态结果文件 (CSV)
+
+| 列名 | 数据类型 | 说明 |
+|------|----------|------|
+| `target_temp` | float | 目标温度设定点 (°C) |
+| `avg_temp` | float | 平均测量温度 (°C) |
+| `avg_power` | float | 平均功率消耗 (W) |
+
+---
+
+## 完整使用示例
+
+### 示例1：完整校准流程
+
+```gcode
+; 1. 运行稳态阶梯响应实验
+STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300,350,400,450 DURATION=180 FILENAME=steady_state_full.csv
+
+; 2. 等待冷却
+M104 S0
+G4 P60000
+
+; 3. 运行PRBS动态激励实验
+PRBS_CALIBRATE HEATER=extruder DURATION=600 MIN_PULSE=0.2 MAX_PULSE=15 SAMPLE_RATE=20 FILENAME=prbs_full.csv
+
+; 4. 估计热参数
+ESTIMATE_THERMAL_PARAMS DATA_FILE=~/printer_data/temp_data/steady_state_full_results.csv METHOD=steady_state
+```
+
+### 示例2：快速手动采集
+
+```gcode
+; 启动采集
+TEMP_DATA_COLLECT HEATER=extruder SAMPLE_RATE=10 EXPERIMENT=heating_test
+
+; 执行加热操作
+M104 S200
+M109 S200
+G4 P30000
+
+; 停止并保存
+TEMP_DATA_STOP FILENAME=heating_test.csv
+```
+
+### 示例3：热床校准
+
+```gcode
+; 热床稳态校准
+STEADY_STATE_CALIBRATE HEATER=heater_bed TEMP_POINTS=40,50,60,70,80,90,100 DURATION=300 FILENAME=bed_steady_state.csv
+```
+
+---
+
+## 状态信息接口
+
+模块通过 `get_status()` 方法导出状态信息，可通过宏或API访问：
+
+```python
+# 在宏中获取状态
+{% set collector = printer['temp_data_collector'] %}
+{% if collector.is_collecting %}
+    正在采集数据，已采集 {{ collector.samples_collected }} 个样本
+{% endif %}
+```
+
+**返回的状态字典：**
+```python
+{
+    'is_collecting': bool,        # 是否正在采集
+    'current_experiment': str,    # 当前实验名称
+    'samples_collected': int,     # 已采集样本数
+    'sample_rate': float,         # 当前采样率
+    'data_directory': str         # 数据存储目录
+}
+```
+
+---
+
+## 注意事项与安全警告
+
+### 安全警告
+
+1. **PRBS实验使用开环控制**：该实验直接设置PWM占空比，绕过PID控制器。请确保：
+   - 配置了适当的最高温度限制
+   - 实验期间有人监控
+   - 热保护功能正常工作
+
+2. **温度范围**：确保所有温度设定点在加热器的安全工作范围内。
+
+### 实验建议
+
+1. **稳态实验前**：
+   - 关闭所有主动散热风扇（模型冷却风扇、喉管散热风扇）
+   - 保持环境温度恒定（约25°C）
+   - 排除外界气流干扰
+
+2. **采样率选择**：
+   - 稳态实验：5-10 Hz 即可
+   - PRBS实验：建议 15-20 Hz，以捕捉快速瞬变
+
+3. **数据存储**：
+   - 20 Hz 采样率下，10分钟实验约产生 12,000 个样本
+   - 确保有足够的磁盘空间
+
+---
+
+## 与MPC控制的集成
+
+辨识得到的热参数可用于配置MPC（模型预测控制）：
+
+```ini
+[pid_profile extruder calibrated]
+control: mpc
+heater_power: 60.0
+block_heat_capacity: <辨识得到的热容值>
+ambient_transfer: <辨识得到的K_lin值>
+sensor_responsiveness: <辨识得到的传感器响应系数>
+```
+
+---
+
+## 高级分析建议
+
+### PRBS数据分析
+
+PRBS数据需要使用外部工具进行高级系统辨识：
+
+**推荐工具：**
+- MATLAB System Identification Toolbox
+- Python `scipy.signal` 模块
+- Python `control` 库
+
+**分析方法：**
+1. 从阶跃响应识别时间常数
+2. 使用ARX/ARMAX模型估计传递函数
+3. 应用子空间辨识方法建立多节点模型
+
+### Python分析示例
+
+```python
+import pandas as pd
+import numpy as np
+from scipy import signal
+
+# 加载数据
+data = pd.read_csv('prbs_data.csv')
+time = data['time'].values
+temp = data['temperature'].values
+power = data['power_watts'].values
+
+# 简单的阶跃响应分析
+# 找到功率阶跃点
+step_indices = np.where(np.diff(power) != 0)[0]
+
+# 计算时间常数
+for idx in step_indices[:5]:  # 分析前5个阶跃
+    step_response = temp[idx:idx+200] - temp[idx]
+    # 拟合指数响应曲线...
+```
+
+---
+
+## 许可证
+
+本模块依据 GNU GPLv3 许可证分发。
