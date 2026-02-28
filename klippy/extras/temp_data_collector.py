@@ -776,7 +776,7 @@ class TemperatureDataCollector:
             PRBS_CALIBRATE [HEATER=<加热器>] [DURATION=<总时长>] 
                           [MIN_PULSE=<最小脉宽>] [MAX_PULSE=<最大脉宽>]
                           [POWER_LEVELS=<功率电平>] [SAMPLE_RATE=<采样率>]
-                          [FILENAME=<文件名>]
+                          [MAX_TEMP=<最高温度>] [FILENAME=<文件名>]
             
         参数：
             HEATER: 加热器名称，默认 "extruder"
@@ -785,28 +785,27 @@ class TemperatureDataCollector:
             MAX_PULSE: 最大脉冲宽度（秒），默认 10.0
             POWER_LEVELS: 功率电平序列，逗号分隔，默认 "0.0,1.0"
             SAMPLE_RATE: 采样频率 (Hz)，默认 20.0
+            MAX_TEMP: 最高温度限制 (°C)，默认 300.0，超过此温度将暂停加热
             FILENAME: 输出文件名
             
         示例：
-            PRBS_CALIBRATE HEATER=extruder DURATION=600 MIN_PULSE=0.2 MAX_PULSE=15 POWER_LEVELS=0.0,0.5,1.0
+            PRBS_CALIBRATE HEATER=extruder DURATION=600 MIN_PULSE=0.2 MAX_PULSE=15 POWER_LEVELS=0.0,0.5,1.0 MAX_TEMP=280
         """
-        # 解析参数
         heater_name = gcmd.get("HEATER", "extruder")
         duration = gcmd.get_float("DURATION", 300.0, above=0.0)
         min_pulse = gcmd.get_float("MIN_PULSE", 0.2, above=0.0)
         max_pulse = gcmd.get_float("MAX_PULSE", 10.0, above=0.0, minval=min_pulse)
         power_levels = gcmd.get("POWER_LEVELS", "0.0,1.0")
         sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
+        max_temp = gcmd.get_float("MAX_TEMP", 300.0, above=0.0)
         filename = gcmd.get("FILENAME", f"prbs_data_{int(time.time())}.csv")
 
-        # 获取加热器
         try:
             self.heater = self._get_heater(heater_name)
             self.heater_name = heater_name
         except Exception as e:
             raise gcmd.error(f"未找到加热器 '{heater_name}': {e}")
 
-        # 解析功率电平
         try:
             powers = [float(p.strip()) for p in power_levels.split(",")]
         except ValueError:
@@ -819,49 +818,112 @@ class TemperatureDataCollector:
             f"实验时长: {duration}s\n"
             f"脉冲宽度范围: {min_pulse}s - {max_pulse}s\n"
             f"功率电平: {powers}\n"
-            f"采样率: {sample_rate} Hz"
+            f"采样率: {sample_rate} Hz\n"
+            f"最高温度限制: {max_temp}°C"
         )
 
-        # 设置采样率并启动采集
         self.default_sample_rate = sample_rate
         self._start_collection("prbs_dynamic")
 
-        # 生成PRBS序列
         prbs_sequence = self._generate_prbs_sequence(
             duration, min_pulse, max_pulse, powers
         )
 
         try:
-            # 执行PRBS序列
-            start_time = self.reactor.monotonic()
-            for pulse_power, pulse_duration in prbs_sequence:
+            total_paused_time = 0.0
+            experiment_start_time = self.reactor.monotonic()
+            sequence_index = 0
+            current_pulse_remaining = 0.0
+            saved_pulse_power = 0.0
+
+            while sequence_index < len(prbs_sequence):
                 if not self.is_collecting:
                     break
 
-                # 设置功率（开环控制）
+                pulse_power, pulse_duration = prbs_sequence[sequence_index]
+                if current_pulse_remaining > 0:
+                    pulse_duration = current_pulse_remaining
+                    pulse_power = saved_pulse_power
+                else:
+                    current_pulse_remaining = pulse_duration
+                    saved_pulse_power = pulse_power
+
+                pulse_start = self.reactor.monotonic()
                 self._set_heater_power(pulse_power)
 
-                # 等待脉冲结束
-                pulse_end = start_time + pulse_duration
-                while self.reactor.monotonic() < pulse_end:
+                while True:
                     if not self.is_collecting:
                         break
-                    self.reactor.pause(
-                        self.reactor.monotonic() + 0.01
-                    )
 
-                start_time = pulse_end
+                    current_temp = self._get_sensor_temp()
+
+                    if current_temp >= max_temp:
+                        gcmd.respond_info(
+                            f"温度超限 ({current_temp:.1f}°C >= {max_temp}°C)，"
+                            f"暂停加热等待冷却..."
+                        )
+                        self._set_heater_power(0.0)
+
+                        pause_start = self.reactor.monotonic()
+                        recovery_temp = max_temp - 100.0
+                        if recovery_temp < AMBIENT_TEMP:
+                            recovery_temp = AMBIENT_TEMP + 10.0
+
+                        while True:
+                            if not self.is_collecting:
+                                break
+                            current_temp = self._get_sensor_temp()
+                            if current_temp <= recovery_temp:
+                                break
+                            self.reactor.pause(self.reactor.monotonic() + 0.1)
+
+                        pause_end = self.reactor.monotonic()
+                        pause_duration = pause_end - pause_start
+                        total_paused_time += pause_duration
+
+                        gcmd.respond_info(
+                            f"温度已恢复至 {current_temp:.1f}°C (阈值: {recovery_temp}°C)，"
+                            f"继续实验。暂停时长: {pause_duration:.1f}s"
+                        )
+
+                        if not self.is_collecting:
+                            break
+
+                        elapsed_in_pulse = self.reactor.monotonic() - pulse_start - pause_duration
+                        current_pulse_remaining = pulse_duration - elapsed_in_pulse
+                        saved_pulse_power = pulse_power
+
+                        if current_pulse_remaining <= 0:
+                            sequence_index += 1
+                            current_pulse_remaining = 0.0
+                        break
+
+                    elapsed = self.reactor.monotonic() - pulse_start
+                    if elapsed >= pulse_duration:
+                        break
+
+                    self.reactor.pause(self.reactor.monotonic() + 0.01)
+
+                if current_temp < max_temp and current_pulse_remaining <= 0:
+                    sequence_index += 1
+                    current_pulse_remaining = 0.0
 
         except Exception as e:
             gcmd.respond_raw(f"!! PRBS校准中断: {e}")
         finally:
-            # 确保关闭加热器
             self._set_heater_power(0.0)
             self._stop_collection()
             self._save_data_to_csv(filename)
 
+        actual_duration = self.reactor.monotonic() - experiment_start_time
+        effective_duration = actual_duration - total_paused_time
+
         gcmd.respond_info(
-            f"PRBS动态激励校准完成。数据已保存到 {filename}"
+            f"PRBS动态激励校准完成。\n"
+            f"  实际运行时长: {actual_duration:.1f}s\n"
+            f"  暂停时长: {total_paused_time:.1f}s\n"
+            f"  有效实验时长: {effective_duration:.1f}s\n"
+            f"  数据已保存到 {filename}"
         )
 
     def _generate_prbs_sequence(self, duration, min_pulse, max_pulse, powers):
