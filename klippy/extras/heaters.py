@@ -13,6 +13,8 @@ from .control_mpc import (
     FILAMENT_TEMP_SRC_FIXED,
     FILAMENT_TEMP_SRC_SENSOR,
     ControlMPC,
+    AdaptiveMPC,
+    MPCControllerManager,
 )
 
 ######################################################################
@@ -147,6 +149,8 @@ class Heater:
                 "pid": ControlPID,
                 "pid_v": ControlVelocityPID,
                 "mpc": ControlMPC,
+                "adaptive_mpc": AdaptiveMPC,
+                "managed_mpc": MPCControllerManager,
                 "dual_loop_pid": ControlDualLoopPID,
             }
         )
@@ -391,7 +395,7 @@ class Heater:
                 temp_profile["max_delta"] = config_section.getfloat(
                     "max_delta", 2.0, above=0.0
                 )
-            elif control == "mpc":
+            elif control in ("mpc", "adaptive_mpc", "managed_mpc"):
                 temp_profile["block_heat_capacity"] = config_section.getfloat(
                     "block_heat_capacity", above=0.0, default=None
                 )
@@ -430,6 +434,45 @@ class Heater:
                 temp_profile["maximum_retract"] = config_section.getfloat(
                     "maximum_retract", above=0.0, default=2.0
                 )
+                
+                if control in ("adaptive_mpc", "managed_mpc"):
+                    temp_profile["adaptive_enabled"] = config_section.getint(
+                        "adaptive_enabled", 1, minval=0, maxval=1
+                    )
+                    temp_profile["adaptive_min_data"] = config_section.getint(
+                        "adaptive_min_data", 1000, minval=100
+                    )
+                    temp_profile["adaptive_min_hq_data"] = config_section.getint(
+                        "adaptive_min_hq_data", 300, minval=50
+                    )
+                    temp_profile["adaptive_interval"] = config_section.getfloat(
+                        "adaptive_interval", 600.0, above=60.0
+                    )
+                    temp_profile["adaptive_max_change"] = config_section.getfloat(
+                        "adaptive_max_change", 0.5, above=0.0, maxval=1.0
+                    )
+                    temp_profile["adaptive_rmse_threshold"] = config_section.getfloat(
+                        "adaptive_rmse_threshold", 2.0, above=0.0
+                    )
+                    temp_profile["adaptive_max_failures"] = config_section.getint(
+                        "adaptive_max_failures", 3, minval=1, maxval=10
+                    )
+                    temp_profile["adaptive_smoothing"] = config_section.getint(
+                        "adaptive_smoothing", 1, minval=0, maxval=1
+                    )
+                    temp_profile["adaptive_smoothing_tau"] = config_section.getfloat(
+                        "adaptive_smoothing_tau", 30.0, above=1.0
+                    )
+                
+                if control == "managed_mpc":
+                    temp_profile["initial_mode"] = config_section.get(
+                        "initial_mode", "adaptive"
+                    ).lower()
+                    if temp_profile["initial_mode"] not in ["standard", "adaptive"]:
+                        raise config_section.error(
+                            f"Invalid initial_mode '{temp_profile['initial_mode']}', "
+                            "must be 'standard' or 'adaptive'"
+                        )
 
                 filament_temp_src_raw = config_section.get(
                     "filament_temperature_source", "ambient"

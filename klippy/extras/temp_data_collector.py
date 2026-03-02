@@ -121,6 +121,7 @@ class TemperatureDataCollector:
         self.is_collecting = False                    # 是否正在采集
         self.collection_lock = threading.Lock()       # 线程锁，保护数据缓冲区
         self.current_experiment = None                # 当前实验名称
+        self.current_phase = "heating"                # 当前阶段：heating/cooling
         self.data_buffer = []                         # 数据缓存列表
         self.sample_timer = None                      # 采样定时器句柄
         self.start_time = 0.0                         # 实验开始时间
@@ -287,29 +288,27 @@ class TemperatureDataCollector:
             - target: 目标温度 (°C)
             - power_watts: 计算功率 (W) = pwm × max_heater_power
             - experiment: 实验名称（可选）
+            - phase: 当前阶段（heating/cooling）
         """
         if not self.is_collecting:
             return
         
-        # 采集各项数据
         temp = self._get_sensor_temp()
         pwm = self._get_pwm_value()
         target = getattr(self.heater, "target_temp", 0.0) if self.heater else 0.0
 
-        # 构建数据样本字典
         sample = {
             "time": eventtime,
             "temperature": temp,
             "pwm": pwm,
             "target": target,
-            "power_watts": pwm * self.max_heater_power,  # PWM转换为实际功率
+            "power_watts": pwm * self.max_heater_power,
+            "phase": self.current_phase,
         }
 
-        # 如果有实验名称，添加到样本中
         if self.current_experiment is not None:
             sample["experiment"] = self.current_experiment
 
-        # 使用线程锁保护数据缓冲区，防止并发写入问题
         with self.collection_lock:
             self.data_buffer.append(sample)
 
@@ -329,18 +328,15 @@ class TemperatureDataCollector:
             该方法使用线程锁确保状态变更的原子性。
         """
         with self.collection_lock:
-            # 检查是否已有采集任务
             if self.is_collecting:
                 return False
             
-            # 初始化采集状态
             self.is_collecting = True
             self.current_experiment = experiment_name
+            self.current_phase = "heating"
             self.data_buffer = []
             self.start_time = self.reactor.monotonic()
 
-        # 注册采样定时器
-        # 定时器周期 = 1 / 采样率
         self.sample_timer = self.reactor.register_timer(
             self._sample_callback_timer, self.reactor.NOW
         )
@@ -392,6 +388,7 @@ class TemperatureDataCollector:
             - target: 目标温度 (°C)
             - power_watts: 功率 (W)
             - experiment: 实验名称
+            - phase: 当前阶段（heating/cooling）
         """
         if not self.data_buffer:
             return False
@@ -399,7 +396,6 @@ class TemperatureDataCollector:
         filepath = os.path.join(self.data_dir, filename)
         try:
             with open(filepath, "w", newline="") as csvfile:
-                # 定义CSV列名
                 fieldnames = [
                     "time",
                     "temperature",
@@ -407,20 +403,21 @@ class TemperatureDataCollector:
                     "target",
                     "power_watts",
                     "experiment",
+                    "phase",
                 ]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
 
-                # 计算起始时间，将绝对时间转换为相对时间
                 start_time = self.data_buffer[0]["time"]
                 for sample in self.data_buffer:
                     row = {
-                        "time": sample["time"] - start_time,  # 相对时间
+                        "time": sample["time"] - start_time,
                         "temperature": sample["temperature"],
                         "pwm": sample["pwm"],
                         "target": sample["target"],
                         "power_watts": sample["power_watts"],
                         "experiment": sample.get("experiment", ""),
+                        "phase": sample.get("phase", "heating"),
                     }
                     writer.writerow(row)
             return True
@@ -553,6 +550,10 @@ class TemperatureDataCollector:
             STEADY_STATE_CALIBRATE [HEATER=<加热器>] [TEMP_POINTS=<温度点>] 
                                    [TOLERANCE=<容差>] [DURATION=<持续时间>] 
                                    [FILENAME=<文件名>]
+                                   [COOLING_ENABLED=<0|1>]
+                                   [COOLING_MODE=<duration|target_temp>]
+                                   [COOLING_DURATION=<秒>]
+                                   [COOLING_TARGET_TEMP=<温度>]
             
         参数：
             HEATER: 加热器名称，默认 "extruder"
@@ -560,11 +561,16 @@ class TemperatureDataCollector:
             TOLERANCE: 稳定性判断容差 (°C)，默认 0.1
             DURATION: 稳定持续时间要求 (秒)，默认 180
             FILENAME: 输出文件名
+            COOLING_ENABLED: 是否启用冷却数据采集，默认 1（启用）
+            COOLING_MODE: 冷却模式，"duration"（固定时长）或 "target_temp"（目标温度），默认 "target_temp"
+            COOLING_DURATION: 冷却持续时间（秒），当 COOLING_MODE=duration 时有效，默认 600
+            COOLING_TARGET_TEMP: 冷却目标温度 (°C)，当 COOLING_MODE=target_temp 时有效，默认 30
             
         示例：
-            STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300,350,400,450
+            STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300
+            STEADY_STATE_CALIBRATE HEATER=extruder COOLING_MODE=duration COOLING_DURATION=300
+            STEADY_STATE_CALIBRATE HEATER=extruder COOLING_ENABLED=0
         """
-        # 解析参数
         heater_name = gcmd.get("HEATER", "extruder")
         temp_points = gcmd.get("TEMP_POINTS", "50,100,150,200,250,300")
         stability_tolerance = gcmd.get_float("TOLERANCE", 1, above=0.0)
@@ -572,46 +578,55 @@ class TemperatureDataCollector:
         filename = gcmd.get(
             "FILENAME", f"steady_state_{int(time.time())}.csv"
         )
+        
+        cooling_enabled = gcmd.get_int("COOLING_ENABLED", 1, minval=0, maxval=1)
+        cooling_mode = gcmd.get("COOLING_MODE", "target_temp")
+        cooling_duration = gcmd.get_float("COOLING_DURATION", 600.0, above=0.0)
+        cooling_target_temp = gcmd.get_float("COOLING_TARGET_TEMP", 30.0, above=0.0)
 
-        # 获取加热器
         try:
             self.heater = self._get_heater(heater_name)
             self.heater_name = heater_name
         except Exception as e:
             raise gcmd.error(f"未找到加热器 '{heater_name}': {e}")
 
-        # 解析温度点序列
         try:
             temps = [float(t.strip()) for t in temp_points.split(",")]
         except ValueError:
             raise gcmd.error("TEMP_POINTS 格式无效。请使用逗号分隔的数值。")
 
+        if cooling_mode not in ("duration", "target_temp"):
+            raise gcmd.error("COOLING_MODE 必须是 'duration' 或 'target_temp'")
+
         gcmd.respond_info(
             f"启动 '{heater_name}' 的稳态阶梯响应校准\n"
             f"温度设定点: {temps}\n"
             f"稳定性容差: {stability_tolerance}°C\n"
-            f"稳定持续时间: {stability_duration}s"
+            f"稳定持续时间: {stability_duration}s\n"
+            f"冷却数据采集: {'启用' if cooling_enabled else '禁用'}"
         )
+        
+        if cooling_enabled:
+            if cooling_mode == "duration":
+                gcmd.respond_info(f"冷却模式: 固定时长 ({cooling_duration}s)")
+            else:
+                gcmd.respond_info(f"冷却模式: 目标温度 ({cooling_target_temp}°C)")
 
-        # 启动数据采集
         self._start_collection("steady_state_staircase")
 
         results = []
+        cooling_data = None
         try:
-            # 遍历每个温度设定点
             for target_temp in temps:
                 gcmd.respond_info(f"加热至 {target_temp}°C...")
                 
-                # 执行单个温度点的稳态测量
                 self._run_steady_state_point(
                     target_temp, stability_tolerance, stability_duration, gcmd
                 )
 
-                # 计算该温度点的平均功率和温度
                 avg_power = self._calculate_average_power(stability_duration)
                 avg_temp = self._calculate_average_temp(stability_duration)
 
-                # 记录结果
                 results.append(
                     {
                         "target_temp": target_temp,
@@ -624,21 +639,29 @@ class TemperatureDataCollector:
                     f"平均温度={avg_temp:.2f}°C, 平均功率={avg_power:.2f}W"
                 )
 
+            if cooling_enabled:
+                gcmd.respond_info("开始冷却数据采集阶段...")
+                cooling_data = self._run_cooling_phase(
+                    cooling_mode, cooling_duration, cooling_target_temp, gcmd
+                )
+
         except Exception as e:
             gcmd.respond_raw(f"!! 校准中断: {e}")
         finally:
-            # 确保关闭加热器
             self._set_heater_power(0.0)
             self._stop_collection()
             self._save_data_to_csv(filename)
 
-        # 保存汇总结果
         if results:
             self._save_steady_state_results(results, filename)
 
-        gcmd.respond_info(
-            f"稳态阶梯响应校准完成。数据已保存到 {filename}"
-        )
+        if cooling_data:
+            self._save_cooling_results(cooling_data, filename)
+
+        summary = f"稳态阶梯响应校准完成。数据已保存到 {filename}"
+        if cooling_enabled and cooling_data:
+            summary += f"\n冷却阶段: 从 {cooling_data['start_temp']:.1f}°C 降至 {cooling_data['end_temp']:.1f}°C，耗时 {cooling_data['duration']:.1f}s"
+        gcmd.respond_info(summary)
 
     def _run_steady_state_point(
         self, target_temp, tolerance, duration, gcmd
@@ -758,6 +781,158 @@ class TemperatureDataCollector:
                     writer.writerow(r)
         except Exception as e:
             logging.error("保存稳态结果失败: %s", e)
+
+    def _run_cooling_phase(self, mode, duration, target_temp, gcmd):
+        """
+        执行冷却数据采集阶段
+        
+        在完成所有稳态温度点测量后，关闭加热器并采集自然冷却数据。
+        支持两种模式：固定时长模式和目标温度模式。
+        
+        参数：
+            mode: 冷却模式，"duration" 或 "target_temp"
+            duration: 冷却持续时间（秒），仅在 duration 模式下使用
+            target_temp: 冷却目标温度 (°C)，仅在 target_temp 模式下使用
+            gcmd: G-code命令对象，用于输出信息
+            
+        返回：
+            dict: 冷却阶段统计信息，包含：
+                - start_temp: 冷却开始温度 (°C)
+                - end_temp: 冷却结束温度 (°C)
+                - duration: 冷却持续时间 (秒)
+                - mode: 使用的冷却模式
+                - samples: 采集的样本数
+        """
+        self.current_phase = "cooling"
+        
+        self._set_heater_power(0.0)
+        
+        pheaters = self.printer.lookup_object("heaters")
+        pheaters.set_temperature(self.heater, 0.0, wait=False)
+        
+        start_temp = self._get_sensor_temp()
+        cooling_start_time = self.reactor.monotonic()
+        samples_at_start = len(self.data_buffer)
+        
+        gcmd.respond_info(
+            f"冷却阶段开始 - 当前温度: {start_temp:.1f}°C"
+        )
+        
+        check_interval = 1.0
+        last_progress_time = cooling_start_time
+        progress_interval = 30.0
+        
+        cooling_end_temp = start_temp
+        
+        if mode == "duration":
+            gcmd.respond_info(f"冷却模式: 固定时长 {duration}s")
+            
+            while True:
+                if not self.is_collecting:
+                    break
+                    
+                current_temp = self._get_sensor_temp()
+                elapsed = self.reactor.monotonic() - cooling_start_time
+                
+                if elapsed >= duration:
+                    cooling_end_temp = current_temp
+                    break
+                
+                if self.reactor.monotonic() - last_progress_time >= progress_interval:
+                    remaining = duration - elapsed
+                    gcmd.respond_info(
+                        f"冷却中... 当前: {current_temp:.1f}°C, "
+                        f"已耗时: {elapsed:.0f}s, 剩余: {remaining:.0f}s"
+                    )
+                    last_progress_time = self.reactor.monotonic()
+                
+                self.reactor.pause(self.reactor.monotonic() + check_interval)
+                
+        else:
+            gcmd.respond_info(f"冷却模式: 目标温度 {target_temp}°C")
+            
+            while True:
+                if not self.is_collecting:
+                    break
+                    
+                current_temp = self._get_sensor_temp()
+                elapsed = self.reactor.monotonic() - cooling_start_time
+                
+                if current_temp <= target_temp:
+                    cooling_end_temp = current_temp
+                    gcmd.respond_info(
+                        f"已达到目标温度 {target_temp}°C (实际: {current_temp:.1f}°C)"
+                    )
+                    break
+                
+                if self.reactor.monotonic() - last_progress_time >= progress_interval:
+                    temp_diff = current_temp - target_temp
+                    gcmd.respond_info(
+                        f"冷却中... 当前: {current_temp:.1f}°C, "
+                        f"距目标: {temp_diff:.1f}°C, 已耗时: {elapsed:.0f}s"
+                    )
+                    last_progress_time = self.reactor.monotonic()
+                
+                self.reactor.pause(self.reactor.monotonic() + check_interval)
+        
+        cooling_end_time = self.reactor.monotonic()
+        actual_duration = cooling_end_time - cooling_start_time
+        samples_collected = len(self.data_buffer) - samples_at_start
+        
+        cooling_data = {
+            "start_temp": start_temp,
+            "end_temp": cooling_end_temp,
+            "duration": actual_duration,
+            "mode": mode,
+            "samples": samples_collected,
+        }
+        
+        if mode == "duration":
+            cooling_data["target_duration"] = duration
+        else:
+            cooling_data["target_temp"] = target_temp
+        
+        gcmd.respond_info(
+            f"冷却阶段完成\n"
+            f"  起始温度: {start_temp:.1f}°C\n"
+            f"  结束温度: {cooling_end_temp:.1f}°C\n"
+            f"  温降: {start_temp - cooling_end_temp:.1f}°C\n"
+            f"  耗时: {actual_duration:.1f}s\n"
+            f"  采集样本: {samples_collected}"
+        )
+        
+        return cooling_data
+
+    def _save_cooling_results(self, cooling_data, base_filename):
+        """
+        保存冷却阶段汇总结果
+        
+        将冷却阶段的统计信息保存到单独的结果文件。
+        
+        参数：
+            cooling_data: 冷却阶段数据字典
+            base_filename: 基础文件名，结果文件名在此基础上添加 _cooling 后缀
+        """
+        filename = base_filename.replace(".csv", "_cooling.csv")
+        filepath = os.path.join(self.data_dir, filename)
+
+        try:
+            with open(filepath, "w", newline="") as csvfile:
+                fieldnames = [
+                    "start_temp",
+                    "end_temp",
+                    "duration",
+                    "mode",
+                    "samples",
+                    "target_duration",
+                    "target_temp",
+                ]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerow(cooling_data)
+            logging.info("冷却结果已保存到: %s", filepath)
+        except Exception as e:
+            logging.error("保存冷却结果失败: %s", e)
 
     cmd_PRBS_CALIBRATE_help = "运行PRBS动态激励校准实验"
 
@@ -974,6 +1149,7 @@ class TemperatureDataCollector:
             dict: 状态信息字典，包含：
                 - is_collecting: 是否正在采集
                 - current_experiment: 当前实验名称
+                - current_phase: 当前阶段（heating/cooling）
                 - samples_collected: 已采集样本数
                 - sample_rate: 当前采样率
                 - data_directory: 数据存储目录
@@ -981,6 +1157,7 @@ class TemperatureDataCollector:
         return {
             "is_collecting": self.is_collecting,
             "current_experiment": self.current_experiment or "",
+            "current_phase": self.current_phase,
             "samples_collected": len(self.data_buffer),
             "sample_rate": self.default_sample_rate,
             "data_directory": self.data_dir,
