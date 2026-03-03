@@ -132,6 +132,11 @@ class TemperatureDataCollector:
         self.pwm_pin = None                           # PWM引脚对象（保留扩展用）
         self.sensor = None                            # 温度传感器对象（保留扩展用）
 
+        # 开环控制相关变量
+        self._tuning_control = None                   # TuningControl 控制器实例
+        self._saved_control = None                    # 保存的原控制器（用于恢复）
+        self._pid_disabled = False                    # PID 控制器是否已禁用
+
         # 注册事件处理器
         # klippy:ready - 打印机初始化完成时触发
         self.printer.register_event_handler(
@@ -168,6 +173,11 @@ class TemperatureDataCollector:
             "TEMP_DATA_STATUS",
             self.cmd_TEMP_DATA_STATUS,
             desc=self.cmd_TEMP_DATA_STATUS_help,
+        )
+        self.gcode.register_command(
+            "THERMAL_ID_CALIBRATE",
+            self.cmd_THERMAL_ID_CALIBRATE,
+            desc=self.cmd_THERMAL_ID_CALIBRATE_help,
         )
 
         # 创建数据存储目录
@@ -247,8 +257,8 @@ class TemperatureDataCollector:
         """
         设置加热器功率（开环控制）
         
-        该方法直接设置PWM占空比，绕过PID控制器，
-        用于PRBS实验中的开环功率控制。
+        该方法通过TuningControl设置PWM占空比，用于开环功率控制。
+        必须先调用 _setup_tuning_control() 初始化开环控制器。
         
         参数：
             power: PWM占空比 (0.0-1.0)，表示最大功率的百分比
@@ -257,15 +267,73 @@ class TemperatureDataCollector:
             此方法用于开环控制，不经过PID调节，
             使用时需确保有适当的安全保护措施。
         """
+        if self.heater is None or self._tuning_control is None:
+            return
+        self._tuning_control.set_output(power, 0.0)
+
+    def _setup_tuning_control(self):
+        """
+        设置开环控制模式
+        
+        使用TuningControl替换当前控制器，实现开环功率控制。
+        TuningControl会在temperature_update回调中维持设置的PWM值，
+        防止被PID控制器覆盖。
+        
+        必须在开环控制前调用此方法，结束后调用 _restore_pid_control() 恢复。
+        """
         if self.heater is None:
             return
-        current_time = self.reactor.monotonic()
-        # 计算MCU打印时间，添加最小延迟确保命令能被处理
-        print_time = (
-            self.heater.mcu_pwm.get_mcu().estimated_print_time(current_time)
-            + PIN_MIN_TIME
-        )
-        self.heater.set_pwm(print_time, power)
+        
+        class TuningControl:
+            """
+            开环控制占位符 - 用于校准和参数辨识
+            
+            该控制器在temperature_update回调中维持设置的PWM值，
+            而不是根据温度误差计算输出，从而实现开环控制。
+            """
+            def __init__(self, heater):
+                self.value = 0.0
+                self.target = None
+                self.heater = heater
+                self.log = []
+                self.logging = False
+
+            def temperature_update(self, read_time, temp, target_temp):
+                if self.logging:
+                    self.log.append((read_time, temp))
+                self.heater.set_pwm(read_time, self.value)
+
+            def check_busy(self, eventtime, smoothed_temp, target_temp):
+                return self.value != 0.0 or self.target != 0
+
+            def set_output(self, value, target):
+                self.value = value
+                self.target = target
+                self.heater.set_temp(target)
+
+            def get_profile(self):
+                return {"name": "tuning"}
+
+            def get_type(self):
+                return "tuning"
+        
+        self._tuning_control = TuningControl(self.heater)
+        self._saved_control = self.heater.set_control(self._tuning_control)
+        self._pid_disabled = True
+
+    def _restore_pid_control(self):
+        """
+        恢复 PID 控制器
+        
+        将之前保存的控制器恢复，重新启用闭环控制。
+        """
+        if self.heater is None or self._saved_control is None:
+            return
+        
+        self._tuning_control.set_output(0.0, 0.0)
+        self.heater.set_control(self._saved_control)
+        self._pid_disabled = False
+        self._tuning_control = None
 
     # =========================================================================
     # 数据采集核心方法 (Data Collection Core Methods)
@@ -649,6 +717,7 @@ class TemperatureDataCollector:
             gcmd.respond_raw(f"!! 校准中断: {e}")
         finally:
             self._set_heater_power(0.0)
+            self._restore_pid_control()
             self._stop_collection()
             self._save_data_to_csv(filename)
 
@@ -934,6 +1003,569 @@ class TemperatureDataCollector:
         except Exception as e:
             logging.error("保存冷却结果失败: %s", e)
 
+    cmd_THERMAL_ID_CALIBRATE_help = "运行综合热参数辨识实验（10分钟全流程）"
+
+    def cmd_THERMAL_ID_CALIBRATE(self, gcmd):
+        """
+        处理 THERMAL_ID_CALIBRATE 命令 - 综合热参数辨识实验
+        
+        该实验是一个10分钟的综合热参数辨识流程，包含5个阶段：
+        
+        时间轴（秒）：
+        ├── 0-50 ────┼── 50-160 ────┼── 160-260 ───┼── 260-380 ───┼── 380-600 ──┤
+        │ 阶段1      │   阶段2      │   阶段3      │   阶段4      │   阶段5     │
+        │ 初始阶跃   │  200°C稳态   │  300°C稳态   │  350°C稳态   │  安全PRBS  │
+        │ (50秒)     │  (110秒)     │  (100秒)     │  (120秒)     │  (220秒)    │
+        
+        辨识目标：
+        - 阶段1：辨识θ_8和整体热容
+        - 阶段2-4：辨识散热参数（含辐射项）
+        - 阶段5：辨识动态参数
+        
+        用法：
+            THERMAL_ID_CALIBRATE [HEATER=<加热器>] [SAMPLE_RATE=<采样率>]
+                                [MAX_TEMP=<最高温度>] [FILENAME=<文件名>]
+                                [STEP1_DURATION=<秒>]
+                                [STEP2_TEMP=<温度>] [STEP2_DURATION=<秒>]
+                                [STEP3_TEMP=<温度>] [STEP3_DURATION=<秒>]
+                                [STEP4_TEMP=<温度>] [STEP4_DURATION=<秒>]
+                                [STEP5_DURATION=<秒>]
+                                [PRBS_LOW_POWER=<比例>] [PRBS_HIGH_POWER=<比例>]
+            
+        参数：
+            HEATER: 加热器名称，默认 "extruder"
+            SAMPLE_RATE: 采样频率 (Hz)，默认 20.0
+            MAX_TEMP: 最高温度限制 (°C)，默认 400.0
+            FILENAME: 输出文件名
+            
+            阶段参数（可自定义）：
+            STEP1_DURATION: 阶段1持续时间，默认 50秒
+            STEP2_TEMP: 阶段2目标温度，默认 200°C
+            STEP2_DURATION: 阶段2持续时间，默认 110秒
+            STEP3_TEMP: 阶段3目标温度，默认 300°C
+            STEP3_DURATION: 阶段3持续时间，默认 100秒
+            STEP4_TEMP: 阶段4目标温度，默认 350°C
+            STEP4_DURATION: 阶段4持续时间，默认 120秒
+            STEP5_DURATION: 阶段5持续时间，默认 220秒
+            
+            PRBS参数：
+            PRBS_LOW_POWER: PRBS低功率电平，默认 0.2 (20%)
+            PRBS_HIGH_POWER: PRBS高功率电平，默认 0.6 (60%)
+            
+        示例：
+            THERMAL_ID_CALIBRATE HEATER=extruder
+            THERMAL_ID_CALIBRATE HEATER=extruder MAX_TEMP=380 STEP4_TEMP=320
+        """
+        heater_name = gcmd.get("HEATER", "extruder")
+        sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
+        max_temp = gcmd.get_float("MAX_TEMP", 400.0, above=0.0)
+        filename = gcmd.get("FILENAME", f"thermal_id_{int(time.time())}.csv")
+        
+        step1_duration = gcmd.get_float("STEP1_DURATION", 50.0, above=0.0)
+        step2_temp = gcmd.get_float("STEP2_TEMP", 200.0, above=0.0)
+        step2_duration = gcmd.get_float("STEP2_DURATION", 110.0, above=0.0)
+        step3_temp = gcmd.get_float("STEP3_TEMP", 300.0, above=0.0)
+        step3_duration = gcmd.get_float("STEP3_DURATION", 100.0, above=0.0)
+        step4_temp = gcmd.get_float("STEP4_TEMP", 400.0, above=0.0)
+        step4_duration = gcmd.get_float("STEP4_DURATION", 100.0, above=0.0)
+        step5_duration = gcmd.get_float("STEP5_DURATION", 220.0, above=0.0)
+        
+        prbs_low_power = gcmd.get_float("PRBS_LOW_POWER", 0.2, minval=0.0, maxval=1.0)
+        prbs_high_power = gcmd.get_float("PRBS_HIGH_POWER", 0.6, minval=0.0, maxval=1.0)
+
+        try:
+            self.heater = self._get_heater(heater_name)
+            self.heater_name = heater_name
+        except Exception as e:
+            raise gcmd.error(f"未找到加热器 '{heater_name}': {e}")
+
+        total_duration = (step1_duration + step2_duration + step3_duration + 
+                         step4_duration + step5_duration)
+        
+        gcmd.respond_info(
+            f"启动综合热参数辨识实验\n"
+            f"加热器: {heater_name}\n"
+            f"总时长: {total_duration:.0f}秒 ({total_duration/60:.1f}分钟)\n"
+            f"采样率: {sample_rate} Hz\n"
+            f"最高温度限制: {max_temp}°C\n"
+            f"\n阶段配置:\n"
+            f"  阶段1: 初始阶跃 {step1_duration:.0f}秒 (满功率升温至{step2_temp}°C)\n"
+            f"  阶段2: {step2_temp}°C稳态 {step2_duration:.0f}秒\n"
+            f"  阶段3: {step3_temp}°C稳态 {step3_duration:.0f}秒\n"
+            f"  阶段4: {step4_temp}°C稳态 {step4_duration:.0f}秒\n"
+            f"  阶段5: 安全PRBS {step5_duration:.0f}秒 ({prbs_low_power*100:.0f}%-{prbs_high_power*100:.0f}%功率)"
+        )
+
+        self.default_sample_rate = sample_rate
+        self._start_collection("thermal_identification")
+
+        experiment_results = {
+            "step1": {},
+            "step2": {},
+            "step3": {},
+            "step4": {},
+            "step5": {},
+        }
+
+        try:
+            experiment_start = self.reactor.monotonic()
+            
+            gcmd.respond_info("\n" + "="*50)
+            gcmd.respond_info("阶段1: 初始阶跃 - 开环满功率升温")
+            gcmd.respond_info("="*50)
+            self.current_phase = "step1_initial_step"
+            step1_results = self._run_step1_initial_step(
+                step1_duration, step2_temp, max_temp, gcmd
+            )
+            experiment_results["step1"] = step1_results
+            
+            gcmd.respond_info("\n" + "="*50)
+            gcmd.respond_info(f"阶段2: {step2_temp}°C稳态测量")
+            gcmd.respond_info("="*50)
+            self.current_phase = "step2_steady_state"
+            step2_results = self._run_steady_state_step(
+                step2_temp, step2_duration, 60.0, gcmd
+            )
+            experiment_results["step2"] = step2_results
+            
+            gcmd.respond_info("\n" + "="*50)
+            gcmd.respond_info(f"阶段3: {step3_temp}°C稳态测量")
+            gcmd.respond_info("="*50)
+            self.current_phase = "step3_steady_state"
+            step3_results = self._run_steady_state_step(
+                step3_temp, step3_duration, 50.0, gcmd
+            )
+            experiment_results["step3"] = step3_results
+            
+            gcmd.respond_info("\n" + "="*50)
+            gcmd.respond_info(f"阶段4: {step4_temp}°C稳态测量（辐射参数辨识）")
+            gcmd.respond_info("="*50)
+            self.current_phase = "step4_steady_state"
+            step4_results = self._run_steady_state_step(
+                step4_temp, step4_duration, 50.0, gcmd
+            )
+            experiment_results["step4"] = step4_results
+            
+            gcmd.respond_info("\n" + "="*50)
+            gcmd.respond_info("阶段5: 安全PRBS动态激励")
+            gcmd.respond_info("="*50)
+            self.current_phase = "step5_prbs"
+            step5_results = self._run_step5_safe_prbs(
+                step5_duration, prbs_low_power, prbs_high_power, 
+                max_temp, gcmd
+            )
+            experiment_results["step5"] = step5_results
+
+        except Exception as e:
+            gcmd.respond_raw(f"!! 实验中断: {e}")
+        finally:
+            self._set_heater_power(0.0)
+            self._stop_collection()
+            self._save_data_to_csv(filename)
+
+        self._save_thermal_id_results(experiment_results, filename)
+
+        actual_duration = self.reactor.monotonic() - experiment_start
+        
+        gcmd.respond_info("\n" + "="*50)
+        gcmd.respond_info("综合热参数辨识实验完成")
+        gcmd.respond_info("="*50)
+        gcmd.respond_info(
+            f"总耗时: {actual_duration:.1f}秒 ({actual_duration/60:.1f}分钟)\n"
+            f"数据已保存到: {filename}\n"
+            f"结果汇总已保存到: {filename.replace('.csv', '_results.csv')}"
+        )
+        
+        self._print_thermal_id_summary(experiment_results, gcmd)
+
+    def _run_step1_initial_step(self, duration, target_temp, max_temp, gcmd):
+        """
+        执行阶段1：初始阶跃
+        
+        开环满功率升温，用于辨识θ_8和整体热容。
+        
+        参数：
+            duration: 最大持续时间（秒）
+            target_temp: 目标温度（达到后停止）
+            max_temp: 最高温度限制
+            gcmd: G-code命令对象
+            
+        返回：
+            dict: 阶段结果，包含初始升温斜率、时间常数等
+        """
+        self._setup_tuning_control()
+        
+        start_time = self.reactor.monotonic()
+        start_temp = self._get_sensor_temp()
+        
+        gcmd.respond_info(f"开始满功率升温，目标温度: {target_temp}°C")
+        
+        self._set_heater_power(1.0)
+        
+        initial_samples = []
+        all_samples = []
+        initial_period = 5.0
+        sample_interval = 0.1
+        last_sample_time = start_time
+        
+        reached_target = False
+        actual_duration = 0.0
+        
+        while True:
+            current_time = self.reactor.monotonic()
+            elapsed = current_time - start_time
+            current_temp = self._get_sensor_temp()
+            
+            if current_time - last_sample_time >= sample_interval:
+                sample_data = {
+                    "elapsed": elapsed,
+                    "temp": current_temp,
+                }
+                all_samples.append(sample_data)
+                
+                if elapsed <= initial_period:
+                    initial_samples.append(sample_data)
+                
+                last_sample_time = current_time
+            
+            if current_temp >= target_temp:
+                reached_target = True
+                actual_duration = elapsed
+                gcmd.respond_info(f"已达到目标温度 {current_temp:.1f}°C (耗时 {elapsed:.1f}秒)")
+                break
+            
+            if current_temp >= max_temp:
+                gcmd.respond_info(f"温度达到上限 {current_temp:.1f}°C，停止升温")
+                actual_duration = elapsed
+                break
+            
+            if elapsed >= duration:
+                gcmd.respond_info(f"达到最大时长 {duration}秒，当前温度 {current_temp:.1f}°C")
+                actual_duration = duration
+                break
+            
+            if elapsed % 10.0 < 0.2:
+                gcmd.respond_info(f"  升温中... {elapsed:.0f}s: {current_temp:.1f}°C")
+            
+            self.reactor.pause(current_time + 0.05)
+        
+        initial_slope = 0.0
+        if len(initial_samples) >= 3:
+            temps = [s["temp"] for s in initial_samples]
+            times = [s["elapsed"] for s in initial_samples]
+            if times[-1] > times[0]:
+                initial_slope = (temps[-1] - temps[0]) / (times[-1] - times[0])
+        
+        end_temp = self._get_sensor_temp()
+        
+        self._set_heater_power(0.0)
+        self._restore_pid_control()
+        
+        results = {
+            "start_temp": start_temp,
+            "end_temp": end_temp,
+            "duration": actual_duration,
+            "reached_target": reached_target,
+            "initial_slope": initial_slope,
+            "samples_count": len(all_samples),
+        }
+        
+        gcmd.respond_info(
+            f"阶段1完成:\n"
+            f"  起始温度: {start_temp:.1f}°C\n"
+            f"  结束温度: {end_temp:.1f}°C\n"
+            f"  升温时长: {actual_duration:.1f}秒\n"
+            f"  初始升温斜率: {initial_slope:.2f}°C/s (用于辨识θ_8)\n"
+            f"  采集样本: {len(all_samples)}"
+        )
+        
+        return results
+
+    def _run_steady_state_step(self, target_temp, duration, stable_duration, gcmd):
+        """
+        执行稳态测量阶段
+        
+        使用PID闭环控制达到目标温度并保持稳态。
+        
+        参数：
+            target_temp: 目标温度 (°C)
+            duration: 阶段总时长（秒）
+            stable_duration: 稳态数据记录时长（秒）
+            gcmd: G-code命令对象
+            
+        返回：
+            dict: 稳态测量结果
+        """
+        pheaters = self.printer.lookup_object("heaters")
+        
+        start_temp = self._get_sensor_temp()
+        gcmd.respond_info(f"设置目标温度: {target_temp}°C (当前: {start_temp:.1f}°C)")
+        
+        pheaters.set_temperature(self.heater, target_temp, wait=True)
+        
+        gcmd.respond_info(f"已达到目标温度，开始稳态数据采集 ({stable_duration}秒)")
+        
+        stable_start = self.reactor.monotonic()
+        samples_at_stable_start = len(self.data_buffer)
+        
+        check_interval = 1.0
+        last_report_time = stable_start
+        report_interval = 15.0
+        
+        while True:
+            current_time = self.reactor.monotonic()
+            elapsed = current_time - stable_start
+            
+            if elapsed >= stable_duration:
+                break
+            
+            if current_time - last_report_time >= report_interval:
+                current_temp = self._get_sensor_temp()
+                remaining = stable_duration - elapsed
+                gcmd.respond_info(
+                    f"  稳态采集中... {elapsed:.0f}s/{stable_duration:.0f}s, "
+                    f"当前温度: {current_temp:.1f}°C"
+                )
+                last_report_time = current_time
+            
+            self.reactor.pause(current_time + check_interval)
+        
+        samples_collected = len(self.data_buffer) - samples_at_stable_start
+        avg_temp = self._calculate_average_temp(stable_duration)
+        avg_power = self._calculate_average_power(stable_duration)
+        
+        results = {
+            "target_temp": target_temp,
+            "avg_temp": avg_temp,
+            "avg_power": avg_power,
+            "stable_duration": stable_duration,
+            "samples_count": samples_collected,
+        }
+        
+        gcmd.respond_info(
+            f"稳态测量完成:\n"
+            f"  目标温度: {target_temp}°C\n"
+            f"  平均温度: {avg_temp:.2f}°C\n"
+            f"  平均功率: {avg_power:.2f}W (散热功率)\n"
+            f"  采集样本: {samples_collected}"
+        )
+        
+        return results
+
+    def _run_step5_safe_prbs(self, duration, low_power, high_power, max_temp, gcmd):
+        """
+        执行阶段5：安全PRBS动态激励
+        
+        开环功率控制，带温度保护机制。
+        
+        参数：
+            duration: 持续时间（秒）
+            low_power: 低功率电平 (0.0-1.0)
+            high_power: 高功率电平 (0.0-1.0)
+            max_temp: 最高温度限制 (°C)
+            gcmd: G-code命令对象
+            
+        返回：
+            dict: PRBS阶段结果
+        """
+        self._setup_tuning_control()
+        
+        min_pulse = 2.0
+        max_pulse = 10.0
+        temp_low_limit = max_temp - 100.0
+        temp_high_limit = max_temp - 10.0
+        
+        gcmd.respond_info(
+            f"PRBS参数:\n"
+            f"  功率范围: {low_power*100:.0f}% - {high_power*100:.0f}%\n"
+            f"  脉冲宽度: {min_pulse}s - {max_pulse}s\n"
+            f"  温度范围: {temp_low_limit}°C - {temp_high_limit}°C"
+        )
+        
+        prbs_sequence = self._generate_prbs_sequence(
+            duration, min_pulse, max_pulse, [low_power, high_power]
+        )
+        
+        start_time = self.reactor.monotonic()
+        start_temp = self._get_sensor_temp()
+        samples_at_start = len(self.data_buffer)
+        
+        sequence_index = 0
+        total_protection_time = 0.0
+        
+        try:
+            while sequence_index < len(prbs_sequence):
+                if not self.is_collecting:
+                    break
+                
+                pulse_power, pulse_duration = prbs_sequence[sequence_index]
+                pulse_start = self.reactor.monotonic()
+                
+                current_temp = self._get_sensor_temp()
+                
+                if current_temp >= temp_high_limit:
+                    adjusted_power = low_power
+                    gcmd.respond_info(f"温度 {current_temp:.1f}°C 接近上限，使用低功率")
+                elif current_temp <= temp_low_limit:
+                    adjusted_power = high_power
+                    gcmd.respond_info(f"温度 {current_temp:.1f}°C 较低，使用高功率")
+                else:
+                    adjusted_power = pulse_power
+                
+                self._set_heater_power(adjusted_power)
+                
+                while True:
+                    if not self.is_collecting:
+                        break
+                    
+                    current_time = self.reactor.monotonic()
+                    elapsed_in_pulse = current_time - pulse_start
+                    current_temp = self._get_sensor_temp()
+                    
+                    if current_temp >= max_temp:
+                        gcmd.respond_info(
+                            f"温度超限 ({current_temp:.1f}°C)，暂停加热"
+                        )
+                        self._set_heater_power(0.0)
+                        
+                        protection_start = current_time
+                        while self._get_sensor_temp() >= temp_high_limit:
+                            if not self.is_collecting:
+                                break
+                            self.reactor.pause(self.reactor.monotonic() + 0.1)
+                        protection_end = self.reactor.monotonic()
+                        protection_duration = protection_end - protection_start
+                        total_protection_time += protection_duration
+                        
+                        gcmd.respond_info(
+                            f"温度恢复，暂停时长: {protection_duration:.1f}s"
+                        )
+                        break
+                    
+                    if elapsed_in_pulse >= pulse_duration:
+                        break
+                    
+                    if int(elapsed_in_pulse) % 5 == 0 and elapsed_in_pulse < 5.1:
+                        gcmd.respond_info(
+                            f"  PRBS脉冲 {sequence_index+1}/{len(prbs_sequence)}: "
+                            f"功率{adjusted_power*100:.0f}%, "
+                            f"温度{current_temp:.1f}°C, "
+                            f"剩余{pulse_duration - elapsed_in_pulse:.1f}s"
+                        )
+                
+                self.reactor.pause(current_time + 0.1)
+            
+            sequence_index += 1
+        finally:
+            self._set_heater_power(0.0)
+            self._restore_pid_control()
+        
+        end_temp = self._get_sensor_temp()
+        actual_duration = self.reactor.monotonic() - start_time
+        samples_collected = len(self.data_buffer) - samples_at_start
+        
+        results = {
+            "duration": actual_duration,
+            "effective_duration": actual_duration - total_protection_time,
+            "protection_time": total_protection_time,
+            "start_temp": start_temp,
+            "end_temp": end_temp,
+            "low_power": low_power,
+            "high_power": high_power,
+            "samples_count": samples_collected,
+            "pulse_count": len(prbs_sequence),
+        }
+        
+        gcmd.respond_info(
+            f"阶段5完成:\n"
+            f"  实际时长: {actual_duration:.1f}秒\n"
+            f"  有效时长: {actual_duration - total_protection_time:.1f}秒\n"
+            f"  保护暂停: {total_protection_time:.1f}秒\n"
+            f"  脉冲数量: {len(prbs_sequence)}\n"
+            f"  采集样本: {samples_collected}"
+        )
+        
+        return results
+
+    def _save_thermal_id_results(self, results, base_filename):
+        """
+        保存综合热参数辨识实验结果
+        
+        参数：
+            results: 各阶段结果字典
+            base_filename: 基础文件名
+        """
+        filename = base_filename.replace(".csv", "_results.csv")
+        filepath = os.path.join(self.data_dir, filename)
+
+        try:
+            with open(filepath, "w", newline="") as csvfile:
+                fieldnames = [
+                    "phase",
+                    "parameter",
+                    "value",
+                    "unit",
+                ]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                
+                step1 = results.get("step1", {})
+                writer.writerow({"phase": "step1", "parameter": "start_temp", "value": step1.get("start_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step1", "parameter": "end_temp", "value": step1.get("end_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step1", "parameter": "duration", "value": step1.get("duration", 0), "unit": "s"})
+                writer.writerow({"phase": "step1", "parameter": "initial_slope", "value": step1.get("initial_slope", 0), "unit": "°C/s"})
+                writer.writerow({"phase": "step1", "parameter": "reached_target", "value": step1.get("reached_target", False), "unit": ""})
+                
+                for step_name, step_key in [("step2", "step2"), ("step3", "step3"), ("step4", "step4")]:
+                    step_data = results.get(step_key, {})
+                    writer.writerow({"phase": step_name, "parameter": "target_temp", "value": step_data.get("target_temp", 0), "unit": "°C"})
+                    writer.writerow({"phase": step_name, "parameter": "avg_temp", "value": step_data.get("avg_temp", 0), "unit": "°C"})
+                    writer.writerow({"phase": step_name, "parameter": "avg_power", "value": step_data.get("avg_power", 0), "unit": "W"})
+                
+                step5 = results.get("step5", {})
+                writer.writerow({"phase": "step5", "parameter": "duration", "value": step5.get("duration", 0), "unit": "s"})
+                writer.writerow({"phase": "step5", "parameter": "effective_duration", "value": step5.get("effective_duration", 0), "unit": "s"})
+                writer.writerow({"phase": "step5", "parameter": "pulse_count", "value": step5.get("pulse_count", 0), "unit": ""})
+                
+            logging.info("热参数辨识结果已保存到: %s", filepath)
+        except Exception as e:
+            logging.error("保存热参数辨识结果失败: %s", e)
+
+    def _print_thermal_id_summary(self, results, gcmd):
+        """
+        打印实验结果摘要
+        
+        参数：
+            results: 各阶段结果字典
+            gcmd: G-code命令对象
+        """
+        gcmd.respond_info("\n实验结果摘要:")
+        gcmd.respond_info("-" * 40)
+        
+        step1 = results.get("step1", {})
+        if step1.get("initial_slope"):
+            gcmd.respond_info(
+                f"θ_8估计 (初始升温斜率): {step1.get('initial_slope', 0):.3f} °C/s"
+            )
+        
+        gcmd.respond_info("\n稳态散热功率:")
+        for step_name, label in [("step2", "200°C"), ("step3", "300°C"), ("step4", "350°C")]:
+            step_data = results.get(step_name, {})
+            if step_data.get("avg_power"):
+                gcmd.respond_info(
+                    f"  {label}: P = {step_data.get('avg_power', 0):.2f}W "
+                    f"(T_avg = {step_data.get('avg_temp', 0):.1f}°C)"
+                )
+        
+        step5 = results.get("step5", {})
+        if step5.get("pulse_count"):
+            gcmd.respond_info(
+                f"\nPRBS动态激励: {step5.get('pulse_count', 0)}个脉冲, "
+                f"有效时长 {step5.get('effective_duration', 0):.1f}s"
+            )
+        
+        gcmd.respond_info("-" * 40)
+
     cmd_PRBS_CALIBRATE_help = "运行PRBS动态激励校准实验"
 
     def cmd_PRBS_CALIBRATE(self, gcmd):
@@ -1004,6 +1636,8 @@ class TemperatureDataCollector:
             duration, min_pulse, max_pulse, powers
         )
 
+        self._setup_tuning_control()
+        
         try:
             total_paused_time = 0.0
             experiment_start_time = self.reactor.monotonic()
