@@ -1496,13 +1496,13 @@ class TemperatureDataCollector:
                         break
                     
                     if elapsed_in_pulse >= pulse_duration:
+                        current_pulse_remaining = 0.0
                         break
                     
                     self.reactor.pause(current_time + 0.1)
                 
                 if current_temp < max_temp and current_pulse_remaining <= 0:
                     sequence_index += 1
-                    current_pulse_remaining = 0.0
                     pulse_logged = False
         
         finally:
