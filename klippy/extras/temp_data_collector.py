@@ -1432,7 +1432,7 @@ class TemperatureDataCollector:
                         pulse_power = high_power
                         gcmd.respond_info(f"温度 {current_temp:.1f}°C 较低，使用高功率")
                 
-                self._set_heater_power(pulse_power)
+                self._set_heater_power(pulse_power,temp_high_limit)
                 
                 while True:
                     if not self.is_collecting:
@@ -1446,7 +1446,7 @@ class TemperatureDataCollector:
                         gcmd.respond_info(
                             f"温度超限 ({current_temp:.1f}°C >= {max_temp}°C)，暂停加热"
                         )
-                        self._set_heater_power(0.0)
+                        self._set_heater_power(0.0, 0.0)
                         
                         protection_start = current_time
                         recovery_temp = max(temp_low_limit, 50.0)
