@@ -732,7 +732,7 @@ class TemperatureDataCollector:
         gcmd.respond_info(summary)
 
     def _run_steady_state_measurement(
-        self, target_temp, stable_duration, gcmd, tolerance=None
+        self, target_temp, stable_duration, gcmd, tolerance=1.0
     ):
         """
         执行单温度点稳态测量
@@ -746,7 +746,7 @@ class TemperatureDataCollector:
             target_temp: 目标温度 (°C)
             stable_duration: 稳态数据采集时长 (秒)
             gcmd: G-code命令对象
-            tolerance: 温度波动容差 (°C)，可选
+            tolerance: 温度波动容差 (°C)，默认值为 1.0
                       - None: 固定时长模式，不进行稳定性监测
                       - 数值: 稳定性监测模式，温度波动 ≤ tolerance 时认为稳定
         
@@ -1060,44 +1060,42 @@ class TemperatureDataCollector:
         """
         处理 THERMAL_ID_CALIBRATE 命令 - 综合热参数辨识实验
         
-        该实验是一个10分钟的综合热参数辨识流程，包含5个阶段：
+        该实验包含4个顺序阶段：
         
         时间轴（秒）：
-        ├── 0-50 ────┼── 50-160 ────┼── 160-260 ───┼── 260-380 ───┼── 380-600 ──┤
-        │ 阶段1      │   阶段2      │   阶段3      │   阶段4      │   阶段5     │
-        │ 初始阶跃   │  200°C稳态   │  300°C稳态   │  350°C稳态   │  安全PRBS  │
-        │ (50秒)     │  (110秒)     │  (100秒)     │  (120秒)     │  (220秒)    │
+        ├── 0-50 ────┼── 50-240 ────┼── 240-稳态后 ───┼── 冷却30秒 ──┤
+        │ 阶段1      │   阶段2      │     阶段3       │    阶段4     │
+        │ 开环阶跃   │  PRBS激励    │   450°C稳态     │    冷却      │
+        │ (50秒)     │  (190秒)     │  (稳定后30秒)   │   (30秒)     │
         
         辨识目标：
-        - 阶段1：辨识θ_8和整体热容
-        - 阶段2-4：辨识散热参数（含辐射项）
-        - 阶段5：辨识动态参数
+        - 阶段1：辨识θ_8和整体热容（开环满功率阶跃响应）
+        - 阶段2：辨识动态参数（PRBS伪随机序列激励）
+        - 阶段3：辨识散热参数（450°C稳态数据采集）
+        - 阶段4：辨识冷却特性（自然冷却温度衰减）
         
         用法：
             THERMAL_ID_CALIBRATE [HEATER=<加热器>] [SAMPLE_RATE=<采样率>]
                                 [MAX_TEMP=<最高温度>] [FILENAME=<文件名>]
-                                [STEP1_DURATION=<秒>]
-                                [STEP2_TEMP=<温度>] [STEP2_DURATION=<秒>]
-                                [STEP3_TEMP=<温度>] [STEP3_DURATION=<秒>]
-                                [STEP4_TEMP=<温度>] [STEP4_DURATION=<秒>]
-                                [STEP5_DURATION=<秒>]
+                                [STEP1_DURATION=<秒>] [STEP1_TARGET_TEMP=<温度>]
+                                [STEP2_DURATION=<秒>]
+                                [STEP3_TEMP=<温度>] [STEP3_STABLE_DURATION=<秒>]
+                                [STEP4_DURATION=<秒>]
                                 [PRBS_LOW_POWER=<比例>] [PRBS_HIGH_POWER=<比例>]
             
         参数：
             HEATER: 加热器名称，默认 "extruder"
             SAMPLE_RATE: 采样频率 (Hz)，默认 20.0
-            MAX_TEMP: 最高温度限制 (°C)，默认 400.0
+            MAX_TEMP: 最高温度限制 (°C)，默认 500.0
             FILENAME: 输出文件名
             
             阶段参数（可自定义）：
-            STEP1_DURATION: 阶段1持续时间，默认 50秒
-            STEP2_TEMP: 阶段2目标温度，默认 200°C
-            STEP2_DURATION: 阶段2持续时间，默认 110秒
-            STEP3_TEMP: 阶段3目标温度，默认 300°C
-            STEP3_DURATION: 阶段3持续时间，默认 100秒
-            STEP4_TEMP: 阶段4目标温度，默认 400°C
-            STEP4_DURATION: 阶段4持续时间，默认 120秒
-            STEP5_DURATION: 阶段5持续时间，默认 220秒
+            STEP1_DURATION: 阶段1开环阶跃最大持续时间，默认 50秒
+            STEP1_TARGET_TEMP: 阶段1目标温度，默认 200°C
+            STEP2_DURATION: 阶段2 PRBS激励持续时间，默认 190秒
+            STEP3_TEMP: 阶段3稳态目标温度，默认 450°C
+            STEP3_STABLE_DURATION: 阶段3稳态数据采集时长，默认 30秒
+            STEP4_DURATION: 阶段4冷却持续时间，默认 30秒
             
             PRBS参数：
             PRBS_LOW_POWER: PRBS低功率电平，默认 0.2 (20%)
@@ -1105,21 +1103,19 @@ class TemperatureDataCollector:
             
         示例：
             THERMAL_ID_CALIBRATE HEATER=extruder
-            THERMAL_ID_CALIBRATE HEATER=extruder MAX_TEMP=380 STEP4_TEMP=320
+            THERMAL_ID_CALIBRATE HEATER=extruder MAX_TEMP=480 STEP3_TEMP=420
         """
         heater_name = gcmd.get("HEATER", "extruder")
         sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
-        max_temp = gcmd.get_float("MAX_TEMP", 400.0, above=0.0)
+        max_temp = gcmd.get_float("MAX_TEMP", 500.0, above=0.0)
         filename = gcmd.get("FILENAME", f"thermal_id_{int(time.time())}.csv")
         
         step1_duration = gcmd.get_float("STEP1_DURATION", 50.0, above=0.0)
-        step2_temp = gcmd.get_float("STEP2_TEMP", 200.0, above=0.0)
-        step2_duration = gcmd.get_float("STEP2_DURATION", 110.0, above=0.0)
-        step3_temp = gcmd.get_float("STEP3_TEMP", 300.0, above=0.0)
-        step3_duration = gcmd.get_float("STEP3_DURATION", 100.0, above=0.0)
-        step4_temp = gcmd.get_float("STEP4_TEMP", 400.0, above=0.0)
-        step4_duration = gcmd.get_float("STEP4_DURATION", 100.0, above=0.0)
-        step5_duration = gcmd.get_float("STEP5_DURATION", 220.0, above=0.0)
+        step1_target_temp = gcmd.get_float("STEP1_TARGET_TEMP", 200.0, above=0.0)
+        step2_duration = gcmd.get_float("STEP2_DURATION", 190.0, above=0.0)
+        step3_temp = gcmd.get_float("STEP3_TEMP", 450.0, above=0.0)
+        step3_stable_duration = gcmd.get_float("STEP3_STABLE_DURATION", 30.0, above=0.0)
+        step4_duration = gcmd.get_float("STEP4_DURATION", 30.0, above=0.0)
         
         prbs_low_power = gcmd.get_float("PRBS_LOW_POWER", 0.2, minval=0.0, maxval=1.0)
         prbs_high_power = gcmd.get_float("PRBS_HIGH_POWER", 0.6, minval=0.0, maxval=1.0)
@@ -1130,21 +1126,19 @@ class TemperatureDataCollector:
         except Exception as e:
             raise gcmd.error(f"未找到加热器 '{heater_name}': {e}")
 
-        total_duration = (step1_duration + step2_duration + step3_duration + 
-                         step4_duration + step5_duration)
+        total_duration = step1_duration + step2_duration + step3_stable_duration + step4_duration
         
         gcmd.respond_info(
             f"启动综合热参数辨识实验\n"
             f"加热器: {heater_name}\n"
-            f"总时长: {total_duration:.0f}秒 ({total_duration/60:.1f}分钟)\n"
+            f"预计总时长: {total_duration:.0f}秒 ({total_duration/60:.1f}分钟)\n"
             f"采样率: {sample_rate} Hz\n"
             f"最高温度限制: {max_temp}°C\n"
             f"\n阶段配置:\n"
-            f"  阶段1: 初始阶跃 {step1_duration:.0f}秒 (满功率升温至{step2_temp}°C)\n"
-            f"  阶段2: {step2_temp}°C稳态 {step2_duration:.0f}秒\n"
-            f"  阶段3: {step3_temp}°C稳态 {step3_duration:.0f}秒\n"
-            f"  阶段4: {step4_temp}°C稳态 {step4_duration:.0f}秒\n"
-            f"  阶段5: 安全PRBS {step5_duration:.0f}秒 ({prbs_low_power*100:.0f}%-{prbs_high_power*100:.0f}%功率)"
+            f"  阶段1: 开环阶跃响应 {step1_duration:.0f}秒 (满功率升温至{step1_target_temp}°C)\n"
+            f"  阶段2: PRBS动态激励 {step2_duration:.0f}秒 ({prbs_low_power*100:.0f}%-{prbs_high_power*100:.0f}%功率)\n"
+            f"  阶段3: {step3_temp}°C稳态实验 (稳定后采集{step3_stable_duration:.0f}秒)\n"
+            f"  阶段4: 冷却阶段 {step4_duration:.0f}秒 (关闭加热，记录温度衰减)"
         )
 
         self.default_sample_rate = sample_rate
@@ -1155,57 +1149,51 @@ class TemperatureDataCollector:
             "step2": {},
             "step3": {},
             "step4": {},
-            "step5": {},
         }
 
         try:
             experiment_start = self.reactor.monotonic()
             
+            # 阶段1: 开环阶跃响应 (50秒满功率升温至目标温度)
             gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info("阶段1: 开环阶跃 - 满功率升温")
+            gcmd.respond_info(f"阶段1: 开环阶跃响应 - 满功率升温至{step1_target_temp}°C")
             gcmd.respond_info("="*50)
             self.current_phase = "open_loop_step"
             step1_results = self._run_open_loop_step(
-                step1_duration, step2_temp, max_temp, gcmd
+                step1_duration, step1_target_temp, max_temp, gcmd
             )
             experiment_results["step1"] = step1_results
             
+            # 阶段2: PRBS动态激励 (190秒)
             gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info(f"阶段2: {step2_temp}°C稳态测量")
+            gcmd.respond_info("阶段2: PRBS动态激励")
             gcmd.respond_info("="*50)
-            self.current_phase = "step2_steady_state"
-            step2_results = self._run_steady_state_measurement(
-                step2_temp, 60.0, gcmd
+            self.current_phase = "prbs_excitation"
+            step2_results = self._run_step5_safe_prbs(
+                step2_duration, prbs_low_power, prbs_high_power, 
+                max_temp, gcmd
             )
             experiment_results["step2"] = step2_results
             
+            # 阶段3: 450°C稳态实验 (稳定后30秒数据采集)
             gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info(f"阶段3: {step3_temp}°C稳态测量")
+            gcmd.respond_info(f"阶段3: {step3_temp}°C稳态实验")
             gcmd.respond_info("="*50)
-            self.current_phase = "step3_steady_state"
+            self.current_phase = "steady_state"
             step3_results = self._run_steady_state_measurement(
-                step3_temp, 50.0, gcmd
+                step3_temp, step3_stable_duration, gcmd
             )
             experiment_results["step3"] = step3_results
             
+            # 阶段4: 冷却阶段 (30秒)
             gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info(f"阶段4: {step4_temp}°C稳态测量（辐射参数辨识）")
+            gcmd.respond_info("阶段4: 冷却阶段")
             gcmd.respond_info("="*50)
-            self.current_phase = "step4_steady_state"
-            step4_results = self._run_steady_state_measurement(
-                step4_temp, 50.0, gcmd
+            self.current_phase = "cooling"
+            step4_results = self._run_cooling_phase(
+                "duration", step4_duration, 0.0, gcmd
             )
             experiment_results["step4"] = step4_results
-            
-            gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info("阶段5: 安全PRBS动态激励")
-            gcmd.respond_info("="*50)
-            self.current_phase = "step5_prbs"
-            step5_results = self._run_step5_safe_prbs(
-                step5_duration, prbs_low_power, prbs_high_power, 
-                max_temp, gcmd
-            )
-            experiment_results["step5"] = step5_results
 
         except Exception as e:
             gcmd.respond_raw(f"!! 实验中断: {e}")
@@ -1539,7 +1527,7 @@ class TemperatureDataCollector:
         执行阶段5：安全PRBS动态激励（综合实验专用）
         
         该方法是 _run_prbs_experiment 的简化封装，用于综合热参数辨识实验。
-        使用固定脉冲宽度 (2-10秒) 和自适应功率调整。
+        使用固定脉冲宽度 (4-15秒) 和自适应功率调整。
         
         参数：
             duration: 持续时间 (秒)
@@ -1553,9 +1541,9 @@ class TemperatureDataCollector:
         """
         return self._run_prbs_experiment(
             duration=duration,
-            min_pulse=2.0,
-            max_pulse=10.0,
-            power_levels=[low_power, high_power],
+            min_pulse=5.0,
+            max_pulse=15.0,
+            power_levels=[0 ,0 ,0 ,0 , 0.25, 0.5, 0.75],
             max_temp=max_temp,
             gcmd=gcmd,
             adaptive_power=True,
