@@ -1395,6 +1395,14 @@ class TemperatureDataCollector:
             duration, min_pulse, max_pulse, power_levels
         )
         
+        # 输出完整PRBS序列
+        prbs_str = "\n".join([f"    功率: {p*100:.0f}%, 时长: {d:.1f}s" for p, d in prbs_sequence])
+        gcmd.respond_info(
+            f"生成PRBS序列:\n"
+            f"  总脉冲数: {len(prbs_sequence)}\n"
+            f"  完整序列:\n{prbs_str}"
+        )
+        
         start_time = self.reactor.monotonic()
         start_temp = self._get_sensor_temp()
         samples_at_start = len(self.data_buffer)
@@ -1405,79 +1413,110 @@ class TemperatureDataCollector:
         saved_pulse_power = 0.0
         
         try:
+            # 主循环：遍历PRBS序列中的每个脉冲
             while sequence_index < len(prbs_sequence):
+                # 检查数据收集状态
                 if not self.is_collecting:
                     break
                 
+                # 获取当前脉冲的功率和持续时间
                 pulse_power, pulse_duration = prbs_sequence[sequence_index]
                 
+                # 处理脉冲恢复逻辑（如果之前因温度保护暂停）
                 if current_pulse_remaining > 0 and resume_pulse:
+                    # 使用剩余的脉冲时间和功率
                     pulse_duration = current_pulse_remaining
                     pulse_power = saved_pulse_power
                 else:
+                    # 重置脉冲状态
                     current_pulse_remaining = pulse_duration
                     saved_pulse_power = pulse_power
                 
+                # 记录脉冲开始时间和当前温度
                 pulse_start = self.reactor.monotonic()
                 current_temp = self._get_sensor_temp()
                 
+                # 自适应功率调整（根据当前温度）
                 if adaptive_power and len(power_levels) >= 2:
                     low_power = min(power_levels)
                     high_power = max(power_levels)
                     
+                    # 温度接近上限时使用低功率
                     if current_temp >= temp_high_limit:
                         pulse_power = low_power
                         gcmd.respond_info(f"温度 {current_temp:.1f}°C 接近上限，使用低功率")
+                    # 温度较低时使用高功率
                     elif current_temp <= temp_low_limit:
                         pulse_power = high_power
                         gcmd.respond_info(f"温度 {current_temp:.1f}°C 较低，使用高功率")
                 
-                self._set_heater_power(pulse_power,temp_high_limit)
+                # 计算动态目标温度（当前温度 + 15°C）
+                target_temp = current_temp + 15
+                # 设置加热器功率和目标温度
+                self._set_heater_power(pulse_power, target_temp)
                 
+                # 脉冲执行监控循环
                 while True:
+                    # 检查数据收集状态
                     if not self.is_collecting:
                         break
                     
+                    # 计算当前时间和脉冲已执行时间
                     current_time = self.reactor.monotonic()
                     elapsed_in_pulse = current_time - pulse_start
+                    # 获取当前温度
                     current_temp = self._get_sensor_temp()
                     
+                    # 温度超限保护
                     if current_temp >= max_temp:
                         gcmd.respond_info(
                             f"温度超限 ({current_temp:.1f}°C >= {max_temp}°C)，暂停加热"
                         )
+                        # 停止加热
                         self._set_heater_power(0.0, 0.0)
                         
+                        # 记录保护开始时间
                         protection_start = current_time
+                        # 计算恢复温度（不低于50°C）
                         recovery_temp = max(temp_low_limit, 50.0)
                         
+                        # 等待温度降至安全水平
                         while self._get_sensor_temp() >= temp_high_limit:
                             if not self.is_collecting:
                                 break
+                            # 短暂暂停以避免CPU占用过高
                             self.reactor.pause(self.reactor.monotonic() + 0.1)
                         
+                        # 记录保护结束时间并计算保护持续时间
                         protection_end = self.reactor.monotonic()
                         protection_duration = protection_end - protection_start
                         total_protection_time += protection_duration
                         
+                        # 输出温度恢复信息
                         gcmd.respond_info(
                             f"温度恢复至 {self._get_sensor_temp():.1f}°C，"
                             f"暂停时长: {protection_duration:.1f}s"
                         )
                         
+                        # 处理脉冲恢复逻辑
                         if resume_pulse:
+                            # 调整脉冲剩余时间（扣除保护时间）
                             elapsed_in_pulse = current_time - pulse_start - protection_duration
                             current_pulse_remaining = pulse_duration - elapsed_in_pulse
                             saved_pulse_power = pulse_power
                             
+                            # 如果脉冲已完成，移动到下一个脉冲
                             if current_pulse_remaining <= 0:
                                 sequence_index += 1
                                 current_pulse_remaining = 0.0
+                        # 退出当前脉冲监控循环
                         break
                     
+                    # 检查脉冲是否完成
                     if elapsed_in_pulse >= pulse_duration:
                         break
                     
+                    # 脉冲开始时输出状态信息（仅一次）
                     if int(elapsed_in_pulse) % 5 == 0 and elapsed_in_pulse < 5.1:
                         gcmd.respond_info(
                             f"  PRBS脉冲 {sequence_index+1}/{len(prbs_sequence)}: "
@@ -1486,8 +1525,10 @@ class TemperatureDataCollector:
                             f"剩余{pulse_duration - elapsed_in_pulse:.1f}s"
                         )
                     
+                    # 短暂暂停以避免CPU占用过高
                     self.reactor.pause(current_time + 0.1)
                 
+                # 脉冲正常完成，移动到下一个脉冲
                 if current_temp < max_temp and current_pulse_remaining <= 0:
                     sequence_index += 1
                     current_pulse_remaining = 0.0
