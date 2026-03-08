@@ -13,8 +13,7 @@ from .control_mpc import (
     FILAMENT_TEMP_SRC_FIXED,
     FILAMENT_TEMP_SRC_SENSOR,
     ControlMPC,
-    AdaptiveMPC,
-    MPCControllerManager,
+    ControlMPCV2,
 )
 
 ######################################################################
@@ -149,8 +148,7 @@ class Heater:
                 "pid": ControlPID,
                 "pid_v": ControlVelocityPID,
                 "mpc": ControlMPC,
-                "adaptive_mpc": AdaptiveMPC,
-                "managed_mpc": MPCControllerManager,
+                "mpc_v2": ControlMPCV2,
                 "dual_loop_pid": ControlDualLoopPID,
             }
         )
@@ -395,7 +393,7 @@ class Heater:
                 temp_profile["max_delta"] = config_section.getfloat(
                     "max_delta", 2.0, above=0.0
                 )
-            elif control in ("mpc", "adaptive_mpc", "managed_mpc"):
+            elif control == "mpc":
                 temp_profile["block_heat_capacity"] = config_section.getfloat(
                     "block_heat_capacity", above=0.0, default=None
                 )
@@ -434,45 +432,6 @@ class Heater:
                 temp_profile["maximum_retract"] = config_section.getfloat(
                     "maximum_retract", above=0.0, default=2.0
                 )
-                
-                if control in ("adaptive_mpc", "managed_mpc"):
-                    temp_profile["adaptive_enabled"] = config_section.getint(
-                        "adaptive_enabled", 1, minval=0, maxval=1
-                    )
-                    temp_profile["adaptive_min_data"] = config_section.getint(
-                        "adaptive_min_data", 1000, minval=100
-                    )
-                    temp_profile["adaptive_min_hq_data"] = config_section.getint(
-                        "adaptive_min_hq_data", 300, minval=50
-                    )
-                    temp_profile["adaptive_interval"] = config_section.getfloat(
-                        "adaptive_interval", 600.0, above=60.0
-                    )
-                    temp_profile["adaptive_max_change"] = config_section.getfloat(
-                        "adaptive_max_change", 0.5, above=0.0, maxval=1.0
-                    )
-                    temp_profile["adaptive_rmse_threshold"] = config_section.getfloat(
-                        "adaptive_rmse_threshold", 2.0, above=0.0
-                    )
-                    temp_profile["adaptive_max_failures"] = config_section.getint(
-                        "adaptive_max_failures", 3, minval=1, maxval=10
-                    )
-                    temp_profile["adaptive_smoothing"] = config_section.getint(
-                        "adaptive_smoothing", 1, minval=0, maxval=1
-                    )
-                    temp_profile["adaptive_smoothing_tau"] = config_section.getfloat(
-                        "adaptive_smoothing_tau", 30.0, above=1.0
-                    )
-                
-                if control == "managed_mpc":
-                    temp_profile["initial_mode"] = config_section.get(
-                        "initial_mode", "adaptive"
-                    ).lower()
-                    if temp_profile["initial_mode"] not in ["standard", "adaptive"]:
-                        raise config_section.error(
-                            f"Invalid initial_mode '{temp_profile['initial_mode']}', "
-                            "must be 'standard' or 'adaptive'"
-                        )
 
                 filament_temp_src_raw = config_section.get(
                     "filament_temperature_source", "ambient"
@@ -513,6 +472,155 @@ class Heater:
                             f"Unknown ambient_temp_sensor '{ambient_sensor_name}' specified"
                         )
                 temp_profile["ambient_temp_sensor"] = ambient_sensor
+
+                fan_name = config_section.get("cooling_fan", None)
+                fan = None
+                if fan_name is not None:
+                    fan_obj = config_section.get_printer().load_object(
+                        config_section,
+                        fan_name,
+                        None,
+                    )
+                    if fan_obj is None:
+                        fan_obj = config_section.get_printer().lookup_object(
+                            fan_name, None
+                        )
+                    if fan_obj is None:
+                        raise config_section.error(
+                            f"Unknown part_cooling_fan '{fan_name}' specified"
+                        )
+                    if not hasattr(fan_obj, "fan") or not hasattr(
+                        fan_obj.fan, "set_speed"
+                    ):
+                        raise config_section.error(
+                            f"part_cooling_fan '{fan_name}' is not a valid fan object"
+                        )
+                    fan = fan_obj.fan
+                temp_profile["cooling_fan"] = fan
+
+                temp_profile["fan_ambient_transfer"] = (
+                    config_section.getfloatlist("fan_ambient_transfer", [])
+                )
+            elif control == "mpc_v2":
+                temp_profile["theta_1"] = config_section.getfloat(
+                    "theta_1", default=5.029312e-02
+                )
+                temp_profile["theta_2"] = config_section.getfloat(
+                    "theta_2", default=2.806417e-01
+                )
+                temp_profile["theta_3"] = config_section.getfloat(
+                    "theta_3", default=1.065468e-02
+                )
+                temp_profile["theta_4"] = config_section.getfloat(
+                    "theta_4", default=1.370236e-01
+                )
+                temp_profile["theta_5"] = config_section.getfloat(
+                    "theta_5", default=3.195262e-03
+                )
+                temp_profile["theta_6"] = config_section.getfloat(
+                    "theta_6", default=2.327857e-02
+                )
+                temp_profile["theta_7"] = config_section.getfloat(
+                    "theta_7", default=2.571527e-11
+                )
+                temp_profile["theta_8"] = config_section.getfloat(
+                    "theta_8", default=8.000314e-02
+                )
+                temp_profile["target_reach_time"] = config_section.getfloat(
+                    "target_reach_time", above=0.0, default=2.0
+                )
+                temp_profile["heater_power"] = config_section.getfloat(
+                    "heater_power", above=0.0
+                )
+                temp_profile["smoothing"] = config_section.getfloat(
+                    "smoothing", above=0.0, maxval=1.0, default=0.83
+                )
+                temp_profile["min_ambient_change"] = config_section.getfloat(
+                    "min_ambient_change", above=0.0, default=1.0
+                )
+                temp_profile["steady_state_rate"] = config_section.getfloat(
+                    "steady_state_rate", above=0.0, default=0.5
+                )
+                temp_profile["filament_diameter"] = config_section.getfloat(
+                    "filament_diameter", above=0.0, default=1.75
+                )
+                temp_profile["filament_density"] = config_section.getfloat(
+                    "filament_density", above=0.0, default=1.2
+                )
+                temp_profile["filament_heat_capacity"] = (
+                    config_section.getfloat(
+                        "filament_heat_capacity", above=0.0, default=1.8
+                    )
+                )
+                temp_profile["maximum_retract"] = config_section.getfloat(
+                    "maximum_retract", above=0.0, default=2.0
+                )
+
+                filament_temp_src_raw = config_section.get(
+                    "filament_temperature_source", "ambient"
+                )
+                temp = filament_temp_src_raw.lower().strip()
+                if temp == "sensor":
+                    filament_temp_src = (FILAMENT_TEMP_SRC_SENSOR,)
+                elif temp == "ambient":
+                    filament_temp_src = (FILAMENT_TEMP_SRC_AMBIENT,)
+                else:
+                    try:
+                        value = float(temp)
+                    except ValueError:
+                        raise config_section.error(
+                            f"Unable to parse option 'filament_temperature_source' in section '{config_section.get_name()}'"
+                        )
+                    filament_temp_src = (FILAMENT_TEMP_SRC_FIXED, value)
+                temp_profile["filament_temp_src"] = filament_temp_src
+
+                ambient_sensor_name = config_section.get(
+                    "ambient_temp_sensor", None
+                )
+                ambient_sensor = None
+                if ambient_sensor_name is not None:
+                    ambient_sensor = config_section.get_printer().load_object(
+                        config_section,
+                        ambient_sensor_name,
+                        None,
+                    )
+                    if ambient_sensor is None:
+                        ambient_sensor = (
+                            config_section.get_printer().lookup_object(
+                                ambient_sensor_name, None
+                            )
+                        )
+                    if ambient_sensor is None:
+                        raise config_section.error(
+                            f"Unknown ambient_temp_sensor '{ambient_sensor_name}' specified"
+                        )
+                temp_profile["ambient_temp_sensor"] = ambient_sensor
+
+                cold_temp_sensor_name = config_section.get(
+                    "cold_temp_sensor", None
+                )
+                cold_temp_sensor = None
+                if cold_temp_sensor_name is not None:
+                    cold_temp_sensor = config_section.get_printer().load_object(
+                        config_section,
+                        cold_temp_sensor_name,
+                        None,
+                    )
+                    if cold_temp_sensor is None:
+                        cold_temp_sensor = (
+                            config_section.get_printer().lookup_object(
+                                cold_temp_sensor_name, None
+                            )
+                        )
+                    if cold_temp_sensor is None:
+                        raise config_section.error(
+                            f"Unknown cold_temp_sensor '{cold_temp_sensor_name}' specified"
+                        )
+                temp_profile["cold_temp_sensor"] = cold_temp_sensor
+
+                temp_profile["T_cold"] = config_section.getfloat(
+                    "T_cold", default=25.0
+                )
 
                 fan_name = config_section.get("cooling_fan", None)
                 fan = None
