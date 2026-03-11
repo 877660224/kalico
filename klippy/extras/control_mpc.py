@@ -1420,7 +1420,6 @@ class ControlMPCV2:
                 self.const_weight_rate_v2, self.last_control_v2
             )
         
-        # 纯Python回退版本
         u_full = np.zeros(Np)
         for i in range(Np):
             u_full[i] = u[min(i, Nc - 1)]
@@ -1437,7 +1436,9 @@ class ControlMPCV2:
         else:
             rate_penalty = self.const_weight_rate_v2 * (u[0] - self.last_control_v2)**2
         
-        return tracking_error + control_effort + rate_penalty
+        total_cost = tracking_error + control_effort + rate_penalty
+        
+        return total_cost
     
     def _solve_mpc_v2(self, initial_state, setpoint, dt, T_env, T_cold, v_f, T_filament):
         """
@@ -1466,8 +1467,23 @@ class ControlMPCV2:
         min_power = 0.0
         
         T_s = initial_state['T_s']
+        T_b = initial_state['T_b']
         temp_error = setpoint - T_s
         
+        logging.debug(
+            f"MPC V2: setpoint={setpoint:.1f}, T_s={T_s:.1f}, T_b={T_b:.1f}, "
+            f"temp_error={temp_error:.1f}, max_power={max_power:.1f}"
+        )
+        
+        # 简单回退控制：当温度误差很大时使用简单比例控制
+        if temp_error > 100:
+            logging.debug(f"MPC V2: Large temp error, using full power")
+            return max_power
+        elif temp_error < -50:
+            logging.debug(f"MPC V2: Temp overshoot, turning off heater")
+            return 0.0
+        
+        # 根据温度误差确定初始猜测值
         if temp_error > 50:
             u0 = np.ones(Nc) * max_power * 0.8
         elif temp_error > 20:
@@ -1494,9 +1510,16 @@ class ControlMPCV2:
                 }
             )
             optimal_control = result.x[0]
+            logging.debug(
+                f"MPC V2 optimization: success={result.success}, "
+                f"optimal_power={optimal_control:.2f}W, iterations={result.nit}"
+            )
         except Exception as e:
             logging.warning(f"MPC V2 optimization failed: {e}, using fallback control")
-            optimal_control = u0[0]
+            # 回退到简单比例控制
+            Kp = 0.5  # 简单的比例系数
+            optimal_control = min(max_power, max(0.0, temp_error * Kp * max_power / 50.0))
+            logging.debug(f"MPC V2 fallback: power={optimal_control:.2f}W")
         
         optimal_control = np.clip(optimal_control, min_power, max_power)
         
@@ -1615,6 +1638,12 @@ class ControlMPCV2:
             power = 0.0
         
         duty = power / self.const_heater_power_v2
+        
+        logging.debug(
+            f"MPC V2 output: power={power:.2f}W, duty={duty:.3f}, "
+            f"heater_power={self.const_heater_power_v2:.1f}W, "
+            f"target={target_temp:.1f}, temp={temp:.1f}"
+        )
         
         T_b = self.state_block_temp_v2
         T_env = self.state_ambient_temp_v2
