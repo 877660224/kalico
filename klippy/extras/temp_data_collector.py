@@ -556,7 +556,7 @@ class TemperatureDataCollector:
         示例：
             TEMP_DATA_STOP FILENAME=my_experiment.csv
         """
-        filename = gcmd.get("FILENAME", f"temp_data_{int(time.time())}.csv")
+        filename = gcmd.get("FILENAME", f"temp_data_{time.strftime('%Y%m%d%H%M')}.csv")
 
         # 停止采集
         self._stop_collection()
@@ -646,7 +646,7 @@ class TemperatureDataCollector:
         stability_tolerance = gcmd.get_float("TOLERANCE", 1, above=0.0)
         stability_duration = gcmd.get_float("DURATION", 180.0, above=0.0)
         filename = gcmd.get(
-            "FILENAME", f"steady_state_{int(time.time())}.csv"
+            "FILENAME", f"steady_state_{time.strftime('%Y%m%d%H%M')}.csv"
         )
         
         cooling_enabled = gcmd.get_int("COOLING_ENABLED", 1, minval=0, maxval=1)
@@ -1108,7 +1108,7 @@ class TemperatureDataCollector:
         heater_name = gcmd.get("HEATER", "extruder")
         sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
         max_temp = gcmd.get_float("MAX_TEMP", 500.0, above=0.0)
-        filename = gcmd.get("FILENAME", f"thermal_id_{int(time.time())}.csv")
+        filename = gcmd.get("FILENAME", f"thermal_id_{time.strftime('%Y%m%d%H%M')}.csv")
         
         step1_duration = gcmd.get_float("STEP1_DURATION", 50.0, above=0.0)
         step1_target_temp = gcmd.get_float("STEP1_TARGET_TEMP", 200.0, above=0.0)
@@ -1670,7 +1670,7 @@ class TemperatureDataCollector:
         power_levels_str = gcmd.get("POWER_LEVELS", "0.0,1.0")
         sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
         max_temp = gcmd.get_float("MAX_TEMP", 300.0, above=0.0)
-        filename = gcmd.get("FILENAME", f"prbs_data_{int(time.time())}.csv")
+        filename = gcmd.get("FILENAME", f"prbs_data_{time.strftime('%Y%m%d%H%M')}.csv")
         adaptive_power = gcmd.get_int("ADAPTIVE_POWER", 1, minval=0, maxval=1) == 1
 
         try:

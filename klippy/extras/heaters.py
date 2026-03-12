@@ -650,6 +650,29 @@ class Heater:
                 temp_profile["fan_ambient_transfer"] = (
                     config_section.getfloatlist("fan_ambient_transfer", [])
                 )
+
+                # MPC V2 特有参数
+                temp_profile["prediction_horizon"] = config_section.getint(
+                    "prediction_horizon", minval=5, maxval=100, default=30
+                )
+                temp_profile["control_horizon"] = config_section.getint(
+                    "control_horizon", minval=1, maxval=30, default=10
+                )
+                temp_profile["weight_tracking"] = config_section.getfloat(
+                    "weight_tracking", above=0.0, default=10.0
+                )
+                temp_profile["weight_control"] = config_section.getfloat(
+                    "weight_control", minval=0.0, default=0.001
+                )
+                temp_profile["weight_rate"] = config_section.getfloat(
+                    "weight_rate", minval=0.0, default=0.1
+                )
+                temp_profile["max_iterations"] = config_section.getint(
+                    "max_iterations", minval=10, maxval=500, default=100
+                )
+                temp_profile["tolerance"] = config_section.getfloat(
+                    "tolerance", above=0.0, default=1e-6
+                )
             elif control == "pid" or control == "pid_v":
                 for key, (type, placeholder) in PID_PROFILE_OPTIONS.items():
                     can_be_none = (

@@ -26,7 +26,7 @@ FILAMENT_TEMP_SRC_FIXED = "fixed"
 FILAMENT_TEMP_SRC_SENSOR = "sensor"
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True,fastmath=True)
 def _numba_model_step(T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
                        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
                        c_p):
@@ -72,7 +72,7 @@ def _numba_model_step(T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
     return T_h_new, T_b_new, T_s_new
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True,fastmath=True)
 def _numba_predict_trajectory(T_h_init, T_b_init, T_s_init, power_sequence, dt, T_env, T_cold, v_f, T_filament,
                                theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
                                c_p):
@@ -106,7 +106,7 @@ def _numba_predict_trajectory(T_h_init, T_b_init, T_s_init, power_sequence, dt, 
     return T_h_arr, T_b_arr, T_s_arr
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True,fastmath=True)
 def _numba_mpc_objective(u, T_h_init, T_b_init, T_s_init, setpoint, dt, T_env, T_cold, v_f, T_filament,
                           theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
                           c_p, Np, Nc, w_t, w_c, w_r, last_control):
@@ -143,6 +143,391 @@ def _numba_mpc_objective(u, T_h_init, T_b_init, T_s_init, setpoint, dt, T_env, T
         rate_penalty = w_r * (u[0] - last_control)**2
     
     return tracking_error + control_effort + rate_penalty
+
+
+# =============================================================================
+# EKF (扩展卡尔曼滤波器) - Numba优化实现
+# Extended Kalman Filter - Numba Optimized Implementation
+# =============================================================================
+
+@jit(nopython=True, cache=True, fastmath=False)
+def _ekf_model_jacobian(T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
+                         theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                         c_p):
+    """
+    计算EKF状态转移矩阵的雅可比矩阵
+    
+    状态向量: x = [T_h, T_b, T_s]
+    观测向量: z = [T_s] (仅观测传感器温度)
+    
+    雅可比矩阵 F = df/dx，用于EKF的状态预测协方差更新
+    """
+    T_env_K = T_env + 273.15
+    T_b_K = T_b + 273.15
+    
+    F = np.zeros((3, 3))
+    
+    F[0, 0] = 1.0 - theta_1 * dt
+    F[0, 1] = theta_1 * dt
+    F[0, 2] = 0.0
+    
+    F[1, 0] = theta_2 * dt
+    F[1, 1] = 1.0 - (theta_3 + theta_5 + theta_6 + 4.0 * theta_7 * T_b_K**3 + v_f * c_p * theta_9) * dt
+    F[1, 2] = -theta_3 * dt
+    
+    F[2, 0] = 0.0
+    F[2, 1] = theta_4 * dt
+    F[2, 2] = 1.0 - theta_4 * dt
+    
+    return F
+
+
+@jit(nopython=True, cache=True, fastmath=False)
+def _ekf_predict(x, P, power, dt, T_env, T_cold, v_f, T_filament, Q,
+                 theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p):
+    """
+    EKF预测步骤
+    
+    使用模型预测状态和协方差矩阵
+    
+    参数:
+        x: 状态向量 [T_h, T_b, T_s]
+        P: 状态协方差矩阵 (3x3)
+        power: 输入功率 (W)
+        dt: 时间步长 (s)
+        T_env, T_cold, v_f, T_filament: 环境参数
+        Q: 过程噪声协方差矩阵 (3x3)
+        theta_*: 模型参数
+        c_p: 耗材热容
+    
+    返回:
+        x_pred: 预测状态
+        P_pred: 预测协方差
+    """
+    T_h, T_b, T_s = x[0], x[1], x[2]
+    
+    T_h_new, T_b_new, T_s_new = _numba_model_step(
+        T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+    )
+    
+    x_pred = np.array([T_h_new, T_b_new, T_s_new])
+    
+    F = _ekf_model_jacobian(
+        T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+    )
+    
+    P_pred = F @ P @ F.T + Q
+    
+    return x_pred, P_pred
+
+
+@jit(nopython=True, cache=True, fastmath=False)
+def _ekf_update(x_pred, P_pred, z_meas, R):
+    """
+    EKF更新步骤
+    
+    使用观测值校正状态估计
+    
+    参数:
+        x_pred: 预测状态 [T_h, T_b, T_s]
+        P_pred: 预测协方差 (3x3)
+        z_meas: 观测值 (仅T_s)
+        R: 观测噪声方差
+    
+    返回:
+        x_upd: 更新后的状态
+        P_upd: 更新后的协方差
+    """
+    H = np.zeros((1, 3))
+    H[0, 2] = 1.0
+    
+    z_pred = x_pred[2]
+    y = z_meas - z_pred
+    
+    S = H @ P_pred @ H.T + R
+    K = P_pred @ H.T / S[0, 0]
+    
+    x_upd = x_pred + K.flatten() * y
+    
+    I = np.eye(3)
+    P_upd = (I - K @ H) @ P_pred
+    
+    for i in range(3):
+        x_upd[i] = max(-50.0, min(600.0, x_upd[i]))
+    
+    return x_upd, P_upd
+
+
+@jit(nopython=True, cache=True, fastmath=False)
+def _ekf_step(x, P, z_meas, power, dt, T_env, T_cold, v_f, T_filament, Q, R,
+              theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p):
+    """
+    完整的EKF步骤：预测 + 更新
+    
+    参数:
+        x: 当前状态估计 [T_h, T_b, T_s]
+        P: 当前协方差矩阵 (3x3)
+        z_meas: 传感器温度观测值
+        power: 输入功率
+        dt: 时间步长
+        其他参数: 模型和噪声参数
+    
+    返回:
+        x_new: 更新后的状态估计
+        P_new: 更新后的协方差矩阵
+    """
+    x_pred, P_pred = _ekf_predict(
+        x, P, power, dt, T_env, T_cold, v_f, T_filament, Q,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+    )
+    
+    x_new, P_new = _ekf_update(x_pred, P_pred, z_meas, R)
+    
+    return x_new, P_new
+
+
+# =============================================================================
+# 投影梯度下降法 MPC求解器 - Numba优化实现
+# Projected Gradient Descent MPC Solver - Numba Optimized Implementation
+# =============================================================================
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
+                      theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                      c_p, Np, Nc, w_t, w_c, w_r, last_control):
+    """
+    计算MPC目标函数关于控制序列的梯度
+    
+    使用有限差分法近似梯度
+    
+    参数:
+        T_h, T_b, T_s: 初始状态
+        u: 控制序列 (长度Nc)
+        setpoint: 目标温度
+        其他参数: 模型和MPC参数
+    
+    返回:
+        grad: 梯度向量 (长度Nc)
+    """
+    grad = np.zeros(Nc)
+    eps = 1e-4
+    
+    J0 = _numba_mpc_objective(
+        u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+        c_p, Np, Nc, w_t, w_c, w_r, last_control
+    )
+    
+    for i in range(Nc):
+        u_plus = u.copy()
+        u_plus[i] += eps
+        
+        J_plus = _numba_mpc_objective(
+            u_plus, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control
+        )
+        
+        grad[i] = (J_plus - J0) / eps
+    
+    return grad
+
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _project_to_bounds(u, min_power, max_power):
+    """
+    将控制序列投影到可行域
+    
+    参数:
+        u: 控制序列
+        min_power: 最小功率
+        max_power: 最大功率
+    
+    返回:
+        u_proj: 投影后的控制序列
+    """
+    u_proj = u.copy()
+    for i in range(len(u_proj)):
+        if u_proj[i] < min_power:
+            u_proj[i] = min_power
+        elif u_proj[i] > max_power:
+            u_proj[i] = max_power
+    return u_proj
+
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _line_search(T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_filament,
+                 theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                 c_p, Np, Nc, w_t, w_c, w_r, last_control, alpha_init, rho, c1):
+    """
+    回溯线搜索
+    
+    使用Armijo条件确定步长
+    
+    参数:
+        u: 当前控制序列
+        grad: 梯度方向
+        alpha_init: 初始步长
+        rho: 步长衰减因子
+        c1: Armijo条件参数
+    
+    返回:
+        alpha: 满足条件的步长
+    """
+    alpha = alpha_init
+    
+    J0 = _numba_mpc_objective(
+        u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+        c_p, Np, Nc, w_t, w_c, w_r, last_control
+    )
+    
+    grad_norm_sq = 0.0
+    for i in range(Nc):
+        grad_norm_sq += grad[i] * grad[i]
+    
+    max_line_search_iter = 20
+    for _ in range(max_line_search_iter):
+        u_new = u - alpha * grad
+        
+        J_new = _numba_mpc_objective(
+            u_new, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control
+        )
+        
+        if J_new <= J0 - c1 * alpha * grad_norm_sq:
+            return alpha
+        
+        alpha *= rho
+    
+    return alpha
+
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+                   theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                   c_p, Np, Nc, w_t, w_c, w_r, last_control, max_power, min_power,
+                   max_iter, tol, u_init):
+    """
+    投影梯度下降法求解MPC问题
+    
+    使用回溯线搜索和投影操作求解带约束的MPC优化问题
+    结合最优解追踪策略，确保返回历史最优解
+    
+    参数:
+        T_h, T_b, T_s: 初始状态
+        setpoint: 目标温度
+        max_power, min_power: 功率约束
+        max_iter: 最大迭代次数
+        tol: 收敛容差
+        u_init: 初始控制序列
+    
+    返回:
+        u_opt: 最优控制序列
+        converged: 是否收敛
+        iterations: 实际迭代次数
+    """
+    u = u_init.copy()
+    
+    alpha_init = 1.0
+    rho = 0.5
+    c1 = 1e-4
+    
+    converged = False
+    iterations = 0
+    
+    best_cost = _numba_mpc_objective(
+        u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+        c_p, Np, Nc, w_t, w_c, w_r, last_control
+    )
+    best_u = u.copy()
+    
+    for it in range(max_iter):
+        iterations = it + 1
+        
+        grad = _compute_gradient(
+            T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control
+        )
+        
+        grad_norm = 0.0
+        for i in range(Nc):
+            grad_norm += grad[i] * grad[i]
+        grad_norm = np.sqrt(grad_norm)
+        
+        if grad_norm < tol:
+            converged = True
+            break
+        
+        alpha = _line_search(
+            T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control, alpha_init, rho, c1
+        )
+        
+        u = u - alpha * grad
+        
+        u = _project_to_bounds(u, min_power, max_power)
+        
+        cost = _numba_mpc_objective(
+            u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control
+        )
+        
+        if cost < best_cost:
+            improvement = best_cost - cost
+            best_cost = cost
+            best_u = u.copy()
+            
+            if improvement < tol:
+                converged = True
+                break
+    
+    return best_u, converged, iterations
+
+
+# =============================================================================
+# 批量预测函数 - 用于MPC优化
+# =============================================================================
+
+@jit(nopython=True, cache=True, fastmath=True, parallel=True)
+def _batch_predict_trajectories(T_h, T_b, T_s, u_candidates, dt, T_env, T_cold, v_f, T_filament,
+                                 theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                                 c_p, Np):
+    """
+    批量预测多条轨迹
+    
+    用于并行评估多个候选控制序列
+    
+    参数:
+        u_candidates: 候选控制序列数组 (n_candidates, Np)
+    
+    返回:
+        T_s_final: 每条轨迹的最终传感器温度 (n_candidates,)
+    """
+    n_candidates = u_candidates.shape[0]
+    T_s_final = np.zeros(n_candidates)
+    
+    for k in prange(n_candidates):
+        T_h_cur = T_h
+        T_b_cur = T_b
+        T_s_cur = T_s
+        
+        for i in range(Np):
+            T_h_cur, T_b_cur, T_s_cur = _numba_model_step(
+                T_h_cur, T_b_cur, T_s_cur, u_candidates[k, i], dt, T_env, T_cold, v_f, T_filament,
+                theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+            )
+        
+        T_s_final[k] = T_s_cur
+    
+    return T_s_final
 
 
 class ControlMPC:
@@ -1085,6 +1470,69 @@ class ControlMPCV2:
         # Numba加速可用性
         self.numba_enabled_v2 = NUMBA_AVAILABLE
         
+        # =====================================================================
+        # EKF状态估计器初始化
+        # Extended Kalman Filter Initialization
+        # =====================================================================
+        
+        # EKF状态向量: x = [T_h, T_b, T_s]
+        self.ekf_state_v2 = np.array([
+            self.state_heater_temp_v2,
+            self.state_block_temp_v2,
+            self.state_sensor_temp_v2
+        ])
+        
+        # EKF协方差矩阵初始化
+        # P_0: 初始协方差，表示初始状态的不确定性
+        self.ekf_P_v2 = np.eye(3) * 10.0  # 初始方差10°C²
+        
+        # EKF噪声参数
+        # Q: 过程噪声协方差矩阵，反映模型不确定性
+        # R: 观测噪声方差，反映传感器精度
+        self.ekf_Q_v2 = np.eye(3) * 0.1   # 过程噪声
+        self.ekf_R_v2 = np.array([[0.25]])  # 观测噪声 (0.5°C标准差)
+        
+        # EKF配置参数
+        self.ekf_enabled_v2 = True         # EKF使能标志
+        self.ekf_Q_scale_v2 = 0.1          # 过程噪声缩放因子
+        self.ekf_R_scale_v2 = 0.25         # 观测噪声缩放因子
+        
+        # =====================================================================
+        # 内存预分配 - 热启动优化
+        # Memory Pre-allocation for Hot Start Optimization
+        # =====================================================================
+        
+        # MPC控制序列缓存 (控制时域)
+        Nc = self.profile_v2.get("control_horizon", 10)
+        Np = self.profile_v2.get("prediction_horizon", 30)
+        
+        # 预分配控制序列数组
+        self._u_cache_v2 = np.zeros(Nc)           # 控制序列缓存
+        self._u_prev_v2 = np.zeros(Nc)            # 上一次优化结果
+        self._power_sequence_v2 = np.zeros(Np)    # 功率序列
+        
+        # 预分配状态轨迹数组
+        self._T_h_traj_v2 = np.zeros(Np + 1)
+        self._T_b_traj_v2 = np.zeros(Np + 1)
+        self._T_s_traj_v2 = np.zeros(Np + 1)
+        
+        # 预分配梯度数组
+        self._grad_cache_v2 = np.zeros(Nc)
+        
+        # 热启动标志
+        self._hot_start_available_v2 = False
+        
+        # =====================================================================
+        # 性能统计
+        # Performance Statistics
+        # =====================================================================
+        
+        self.timing_ekf_v2 = 0.0           # EKF计算时间 (ms)
+        self.timing_gradient_v2 = 0.0      # 梯度计算时间 (ms)
+        self.timing_projection_v2 = 0.0    # 投影操作时间 (ms)
+        self.pgd_iterations_v2 = 0         # PGD迭代次数
+        self.pgd_converged_v2 = False      # PGD收敛标志
+        
         if not register:
             return
         
@@ -1208,6 +1656,17 @@ class ControlMPCV2:
         self.const_fan_ambient_transfer_v2 = self.profile_v2.get("fan_ambient_transfer", [])
         
         self.const_T_cold_v2 = self.profile_v2.get("T_cold", 25.0)
+        
+        # EKF参数配置
+        self.ekf_enabled_v2 = self.profile_v2.get("ekf_enabled", True)
+        self.ekf_Q_scale_v2 = self.profile_v2.get("ekf_Q_scale", 0.1)
+        self.ekf_R_scale_v2 = self.profile_v2.get("ekf_R_scale", 0.25)
+        
+        # PGD求解器参数
+        self.pgd_max_iterations_v2 = self.profile_v2.get("pgd_max_iterations", 100)
+        self.pgd_tolerance_v2 = self.profile_v2.get("pgd_tolerance", 1e-3)
+        self.pgd_line_search_alpha_v2 = self.profile_v2.get("pgd_line_search_alpha", 1.0)
+        self.pgd_line_search_rho_v2 = self.profile_v2.get("pgd_line_search_rho", 0.5)
     
     def _update_theta_9_v2(self):
         """
@@ -1470,10 +1929,10 @@ class ControlMPCV2:
         T_b = initial_state['T_b']
         temp_error = setpoint - T_s
         
-        logging.debug(
-            f"MPC V2: setpoint={setpoint:.1f}, T_s={T_s:.1f}, T_b={T_b:.1f}, "
-            f"temp_error={temp_error:.1f}, max_power={max_power:.1f}"
-        )
+        #logging.debug(
+        #    f"MPC V2: setpoint={setpoint:.1f}, T_s={T_s:.1f}, T_b={T_b:.1f}, "
+        #    f"temp_error={temp_error:.1f}, max_power={max_power:.1f}"
+        #)
         
         # 简单回退控制：当温度误差很大时使用简单比例控制
         if temp_error > 100:
@@ -1539,10 +1998,9 @@ class ControlMPCV2:
             2. 计算时间步长
             3. 获取挤出速率
             4. 更新传感器温度
-            5. 模型预测和状态更新
-            6. 状态校正（使用实际测量值）
-            7. MPC优化求解
-            8. 输出控制信号
+            5. EKF状态估计（替代简单的模型预测+校正）
+            6. MPC优化求解（使用投影梯度下降法）
+            7. 输出控制信号
         
         参数:
             read_time: 当前时间 (s)
@@ -1585,57 +2043,154 @@ class ControlMPCV2:
             if temp_cold != 0.0:
                 self.state_cold_temp_v2 = temp_cold
         
-        T_h = self.state_heater_temp_v2
-        T_b = self.state_block_temp_v2
-        T_s = self.state_sensor_temp_v2
         T_env = self.state_ambient_temp_v2
         T_cold = self.state_cold_temp_v2
         T_filament = self.filament_temp_v2(read_time, T_env)
         
-        power = self.last_power_v2
-        T_h_new, T_b_new, T_s_new = self._model_step_v2(
-            T_h, T_b, T_s, power, dt, T_env, T_cold, extrude_speed, T_filament
-        )
+        # =====================================================================
+        # EKF状态估计
+        # Extended Kalman Filter State Estimation
+        # =====================================================================
+        t_ekf_start = time.perf_counter()
         
-        self.state_heater_temp_v2 = T_h_new
-        self.state_block_temp_v2 = T_b_new
-        self.state_sensor_temp_v2 = T_s_new
+        if self.ekf_enabled_v2 and self.numba_enabled_v2:
+            self.ekf_Q_v2 = np.eye(3) * self.ekf_Q_scale_v2
+            self.ekf_R_v2 = np.array([[self.ekf_R_scale_v2]])
+            
+            x_new, P_new = _ekf_step(
+                self.ekf_state_v2,
+                self.ekf_P_v2,
+                temp,
+                self.last_power_v2,
+                dt,
+                T_env,
+                T_cold,
+                extrude_speed,
+                T_filament,
+                self.ekf_Q_v2,
+                self.ekf_R_v2,
+                self.const_theta_1_v2,
+                self.const_theta_2_v2,
+                self.const_theta_3_v2,
+                self.const_theta_4_v2,
+                self.const_theta_5_v2,
+                self.const_theta_6_v2,
+                self.const_theta_7_v2,
+                self.const_theta_8_v2,
+                self.const_theta_9_v2,
+                self.const_filament_cross_section_heat_capacity_v2
+            )
+            
+            self.ekf_state_v2 = x_new
+            self.ekf_P_v2 = P_new
+            
+            self.state_heater_temp_v2 = x_new[0]
+            self.state_block_temp_v2 = x_new[1]
+            self.state_sensor_temp_v2 = x_new[2]
+        else:
+            T_h = self.state_heater_temp_v2
+            T_b = self.state_block_temp_v2
+            T_s = self.state_sensor_temp_v2
+            
+            power = self.last_power_v2
+            T_h_new, T_b_new, T_s_new = self._model_step_v2(
+                T_h, T_b, T_s, power, dt, T_env, T_cold, extrude_speed, T_filament
+            )
+            
+            self.state_heater_temp_v2 = T_h_new
+            self.state_block_temp_v2 = T_b_new
+            self.state_sensor_temp_v2 = T_s_new
+            
+            smoothing = 1 - (1 - self.const_smoothing_v2) ** dt
+            adjustment_dT = (temp - self.state_sensor_temp_v2) * smoothing
+            self.state_heater_temp_v2 += adjustment_dT
+            self.state_block_temp_v2 += adjustment_dT
+            self.state_sensor_temp_v2 += adjustment_dT
+            
+            if (self.last_power_v2 > 0 and self.last_power_v2 < self.heater_max_power_v2) or abs(
+                adjustment_dT
+            ) < self.const_steady_state_rate_v2 * dt:
+                if adjustment_dT > 0.0:
+                    ambient_delta = max(
+                        adjustment_dT, self.const_min_ambient_change_v2 * dt
+                    )
+                else:
+                    ambient_delta = min(
+                        adjustment_dT, -self.const_min_ambient_change_v2 * dt
+                    )
+                self.state_ambient_temp_v2 += ambient_delta
         
-        smoothing = 1 - (1 - self.const_smoothing_v2) ** dt
-        adjustment_dT = (temp - self.state_sensor_temp_v2) * smoothing
-        self.state_heater_temp_v2 += adjustment_dT
-        self.state_block_temp_v2 += adjustment_dT
-        self.state_sensor_temp_v2 += adjustment_dT
+        self.timing_ekf_v2 = (time.perf_counter() - t_ekf_start) * 1000.0
         
-        if (self.last_power_v2 > 0 and self.last_power_v2 < self.heater_max_power_v2) or abs(
-            adjustment_dT
-        ) < self.const_steady_state_rate_v2 * dt:
-            if adjustment_dT > 0.0:
-                ambient_delta = max(
-                    adjustment_dT, self.const_min_ambient_change_v2 * dt
-                )
-            else:
-                ambient_delta = min(
-                    adjustment_dT, -self.const_min_ambient_change_v2 * dt
-                )
-            self.state_ambient_temp_v2 += ambient_delta
+        # =====================================================================
+        # MPC优化求解 - 投影梯度下降法
+        # MPC Optimization - Projected Gradient Descent
+        # =====================================================================
         
         if target_temp != 0.0:
-            initial_state = {
-                'T_h': self.state_heater_temp_v2,
-                'T_b': self.state_block_temp_v2,
-                'T_s': self.state_sensor_temp_v2
-            }
+            if self._hot_start_available_v2:
+                u_init = self._u_prev_v2.copy()
+                for i in range(len(u_init) - 1):
+                    u_init[i] = u_init[i + 1]
+                u_init[-1] = u_init[-2]
+            else:
+                u_init = np.full(
+                    self.const_control_horizon_v2,
+                    self.last_power_v2 if self.last_power_v2 > 0 else 0.0
+                )
             
-            T_env = self.state_ambient_temp_v2
-            T_cold = self.state_cold_temp_v2
-            T_filament = self.filament_temp_v2(read_time, T_env)
-            
-            power = self._solve_mpc_v2(
-                initial_state, target_temp, dt, T_env, T_cold, extrude_speed, T_filament
-            )
+            if self.numba_enabled_v2:
+                u_opt, converged, iterations = _solve_mpc_pgd(
+                    self.state_heater_temp_v2,
+                    self.state_block_temp_v2,
+                    self.state_sensor_temp_v2,
+                    target_temp,
+                    dt,
+                    self.state_ambient_temp_v2,
+                    self.state_cold_temp_v2,
+                    extrude_speed,
+                    T_filament,
+                    self.const_theta_1_v2,
+                    self.const_theta_2_v2,
+                    self.const_theta_3_v2,
+                    self.const_theta_4_v2,
+                    self.const_theta_5_v2,
+                    self.const_theta_6_v2,
+                    self.const_theta_7_v2,
+                    self.const_theta_8_v2,
+                    self.const_theta_9_v2,
+                    self.const_filament_cross_section_heat_capacity_v2,
+                    self.const_prediction_horizon_v2,
+                    self.const_control_horizon_v2,
+                    self.const_weight_tracking_v2,
+                    self.const_weight_control_v2,
+                    self.const_weight_rate_v2,
+                    self.last_power_v2,
+                    self.heater_max_power_v2,
+                    0.0,
+                    self.pgd_max_iterations_v2,
+                    self.pgd_tolerance_v2,
+                    u_init
+                )
+                
+                power = u_opt[0]
+                self._u_prev_v2 = u_opt.copy()
+                self._hot_start_available_v2 = True
+                self.pgd_iterations_v2 = iterations
+                self.pgd_converged_v2 = converged
+            else:
+                initial_state = {
+                    'T_h': self.state_heater_temp_v2,
+                    'T_b': self.state_block_temp_v2,
+                    'T_s': self.state_sensor_temp_v2
+                }
+                
+                power = self._solve_mpc_v2(
+                    initial_state, target_temp, dt, T_env, T_cold, extrude_speed, T_filament
+                )
         else:
             power = 0.0
+            self._hot_start_available_v2 = False
         
         duty = power / self.const_heater_power_v2
         
@@ -1665,15 +2220,12 @@ class ControlMPCV2:
         self.last_temp_time_v2 = read_time
         self.heater_v2.set_pwm(read_time, duty)
         
-        # 更新时间统计
         self.timing_total_v2 = (time.perf_counter() - t_total_start) * 1000.0
         self.timing_count_v2 += 1
         
-        # 更新最大和平均时间
         if self.timing_total_v2 > self.timing_max_v2:
             self.timing_max_v2 = self.timing_total_v2
         
-        # 使用指数移动平均更新平均时间
         alpha = 0.1
         self.timing_avg_v2 = alpha * self.timing_total_v2 + (1 - alpha) * self.timing_avg_v2
     
@@ -1742,6 +2294,8 @@ class ControlMPCV2:
             - 热损耗: loss_ambient, loss_filament, loss_cold, loss_radiation
             - 耗材信息: filament_temp, filament_heat_capacity, filament_density
             - MPC参数: theta_1 ~ theta_9, prediction_horizon, control_horizon, weights
+            - EKF状态: ekf_enabled, ekf_T_h, ekf_T_b, ekf_T_s, ekf_P_diag
+            - PGD状态: pgd_iterations, pgd_converged
             - 性能统计: timing_model_step, timing_predict, timing_optimize, timing_total, timing_max, timing_avg
             - Numba状态: numba_enabled
         
@@ -1779,13 +2333,174 @@ class ControlMPCV2:
             "weight_tracking": self.const_weight_tracking_v2,
             "weight_control": self.const_weight_control_v2,
             "weight_rate": self.const_weight_rate_v2,
+            "ekf_enabled": self.ekf_enabled_v2,
+            "ekf_T_h": float(self.ekf_state_v2[0]),
+            "ekf_T_b": float(self.ekf_state_v2[1]),
+            "ekf_T_s": float(self.ekf_state_v2[2]),
+            "ekf_P_diag": [float(self.ekf_P_v2[0, 0]), float(self.ekf_P_v2[1, 1]), float(self.ekf_P_v2[2, 2])],
+            "ekf_Q_scale": self.ekf_Q_scale_v2,
+            "ekf_R_scale": self.ekf_R_scale_v2,
+            "pgd_iterations": self.pgd_iterations_v2,
+            "pgd_converged": self.pgd_converged_v2,
+            "hot_start_available": self._hot_start_available_v2,
             "timing_model_step": self.timing_model_step_v2,
             "timing_predict": self.timing_predict_v2,
             "timing_optimize": self.timing_optimize_v2,
+            "timing_ekf": self.timing_ekf_v2,
             "timing_total": self.timing_total_v2,
             "timing_max": self.timing_max_v2,
             "timing_avg": self.timing_avg_v2,
             "timing_count": self.timing_count_v2,
             "numba_enabled": self.numba_enabled_v2,
         }
+
+
+# =============================================================================
+# 性能基准测试函数
+# Performance Benchmark Functions
+# =============================================================================
+
+def run_performance_benchmark(n_iterations=100):
+    """
+    运行性能基准测试
+    
+    比较Numba优化前后的计算性能
+    
+    参数:
+        n_iterations: 测试迭代次数
+    
+    返回:
+        dict: 包含各函数执行时间的字典
+    """
+    import time as time_module
+    
+    results = {}
+    
+    theta_1, theta_2, theta_3 = 5.029312e-02, 2.806417e-01, 1.065468e-02
+    theta_4, theta_5, theta_6 = 1.370236e-01, 3.195262e-03, 2.327857e-02
+    theta_7, theta_8, theta_9 = 2.571527e-11, 8.000314e-02, 4.458e-01
+    c_p = 0.00259
+    
+    T_h, T_b, T_s = 200.0, 195.0, 190.0
+    power = 30.0
+    dt = 0.1
+    T_env, T_cold = 25.0, 25.0
+    v_f, T_filament = 0.0, 25.0
+    
+    Np, Nc = 30, 10
+    w_t, w_c, w_r = 10.0, 0.001, 0.1
+    last_control = 30.0
+    max_power = 100.0
+    
+    if NUMBA_AVAILABLE:
+        _numba_model_step(T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
+                          theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p)
+        
+        t_start = time_module.perf_counter()
+        for _ in range(n_iterations):
+            _numba_model_step(T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament,
+                              theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p)
+        t_end = time_module.perf_counter()
+        results['model_step_numba'] = (t_end - t_start) / n_iterations * 1000
+        
+        u_test = np.full(Nc, 30.0)
+        
+        _numba_mpc_objective(
+            u_test, T_h, T_b, T_s, 200.0, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control
+        )
+        
+        t_start = time_module.perf_counter()
+        for _ in range(n_iterations):
+            _numba_mpc_objective(
+                u_test, T_h, T_b, T_s, 200.0, dt, T_env, T_cold, v_f, T_filament,
+                theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                c_p, Np, Nc, w_t, w_c, w_r, last_control
+            )
+        t_end = time_module.perf_counter()
+        results['mpc_objective_numba'] = (t_end - t_start) / n_iterations * 1000
+        
+        x_ekf = np.array([T_h, T_b, T_s])
+        P_ekf = np.eye(3) * 10.0
+        Q_ekf = np.eye(3) * 0.1
+        R_ekf = np.array([[0.25]])
+        
+        _ekf_step(x_ekf, P_ekf, T_s, power, dt, T_env, T_cold, v_f, T_filament, Q_ekf, R_ekf,
+                  theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p)
+        
+        t_start = time_module.perf_counter()
+        for _ in range(n_iterations):
+            _ekf_step(x_ekf, P_ekf, T_s, power, dt, T_env, T_cold, v_f, T_filament, Q_ekf, R_ekf,
+                      theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p)
+        t_end = time_module.perf_counter()
+        results['ekf_step_numba'] = (t_end - t_start) / n_iterations * 1000
+        
+        u_init = np.full(Nc, 30.0)
+        
+        t_start = time_module.perf_counter()
+        u_opt, converged, iterations = _solve_mpc_pgd(
+            T_h, T_b, T_s, 200.0, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control, max_power, 0.0,
+            100, 1e-3, u_init
+        )
+        t_end = time_module.perf_counter()
+        results['mpc_solve_pgd_numba'] = (t_end - t_start) * 1000
+        results['pgd_iterations'] = iterations
+        results['pgd_converged'] = converged
+        
+        t_start = time_module.perf_counter()
+        u_opt2, converged2, iterations2 = _solve_mpc_pgd(
+            T_h, T_b, T_s, 200.0, dt, T_env, T_cold, v_f, T_filament,
+            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+            c_p, Np, Nc, w_t, w_c, w_r, last_control, max_power, 0.0,
+            100, 1e-3, u_opt
+        )
+        t_end = time_module.perf_counter()
+        results['mpc_solve_hotstart_numba'] = (t_end - t_start) * 1000
+        results['pgd_iterations_hotstart'] = iterations2
+        results['pgd_converged_hotstart'] = converged2
+        
+        results['numba_available'] = True
+    else:
+        results['numba_available'] = False
+        results['error'] = 'Numba not available for benchmarking'
+    
+    return results
+
+
+def print_benchmark_results():
+    """打印性能基准测试结果"""
+    print("=" * 60)
+    print("MPC V2 性能基准测试结果")
+    print("=" * 60)
+    
+    results = run_performance_benchmark(n_iterations=100)
+    
+    if not results.get('numba_available', False):
+        print("Numba 不可用，无法运行基准测试")
+        return
+    
+    print(f"\n单步模型预测 (model_step):     {results['model_step_numba']:.4f} ms")
+    print(f"MPC目标函数 (mpc_objective):   {results['mpc_objective_numba']:.4f} ms")
+    print(f"EKF状态更新 (ekf_step):        {results['ekf_step_numba']:.4f} ms")
+    print(f"\nMPC求解 (冷启动):              {results['mpc_solve_pgd_numba']:.4f} ms")
+    print(f"  - 迭代次数: {results['pgd_iterations']}")
+    print(f"  - 收敛状态: {'是' if results['pgd_converged'] else '否'}")
+    print(f"\nMPC求解 (热启动):              {results['mpc_solve_hotstart_numba']:.4f} ms")
+    print(f"  - 迭代次数: {results['pgd_iterations_hotstart']}")
+    print(f"  - 收敛状态: {'是' if results['pgd_converged_hotstart'] else '否'}")
+    
+    print("\n" + "=" * 60)
+    print("总控制周期预估时间:")
+    total_cold = results['ekf_step_numba'] + results['mpc_solve_pgd_numba']
+    total_hot = results['ekf_step_numba'] + results['mpc_solve_hotstart_numba']
+    print(f"  冷启动: EKF + MPC求解 = {total_cold:.4f} ms")
+    print(f"  热启动: EKF + MPC求解 = {total_hot:.4f} ms")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    print_benchmark_results()
 
