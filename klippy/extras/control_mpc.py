@@ -109,11 +109,25 @@ def _numba_predict_trajectory(T_h_init, T_b_init, T_s_init, power_sequence, dt, 
 @jit(nopython=True, cache=True,fastmath=True)
 def _numba_mpc_objective(u, T_h_init, T_b_init, T_s_init, setpoint, dt, T_env, T_cold, v_f, T_filament,
                           theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-                          c_p, Np, Nc, w_t, w_c, w_r, last_control):
+                          c_p, Np, Nc, w_t, w_terminal, w_r, last_control):
     """
     Numba加速的MPC目标函数计算
     
-    计算给定控制序列下的目标函数值
+    目标函数:
+        J = Σ w_track * (T_s[k] - T_set)² + w_terminal * (T_s[Np] - T_set)²
+            + w_rate * (u[0] - u_last)² + Σ w_rate * (u[k] - u[k-1])²
+    
+    参数:
+        u: 控制序列 (长度Nc)
+        T_h_init, T_b_init, T_s_init: 初始状态
+        setpoint: 目标温度
+        w_t: 跟踪权重
+        w_terminal: 终端权重
+        w_r: 变化率权重
+        last_control: 上一次控制量
+    
+    返回:
+        目标函数值
     """
     u_full = np.zeros(Np)
     for i in range(Np):
@@ -131,18 +145,14 @@ def _numba_mpc_objective(u, T_h_init, T_b_init, T_s_init, setpoint, dt, T_env, T
     for i in range(1, Np + 1):
         tracking_error += w_t * (T_s_pred[i] - setpoint)**2
     
-    control_effort = 0.0
-    for i in range(Np):
-        control_effort += w_c * u_full[i]**2
+    terminal_cost = w_terminal * (T_s_pred[Np] - setpoint)**2
     
-    rate_penalty = 0.0
+    rate_penalty = w_r * (u[0] - last_control)**2
     if Nc > 1:
-        for i in range(Nc - 1):
-            rate_penalty += w_r * (u[i + 1] - u[i])**2
-    else:
-        rate_penalty = w_r * (u[0] - last_control)**2
+        for i in range(1, Nc):
+            rate_penalty += w_r * (u[i] - u[i - 1])**2
     
-    return tracking_error + control_effort + rate_penalty
+    return tracking_error + terminal_cost + rate_penalty
 
 
 # =============================================================================
@@ -296,7 +306,7 @@ def _ekf_step(x, P, z_meas, power, dt, T_env, T_cold, v_f, T_filament, Q, R,
 @jit(nopython=True, cache=True, fastmath=True)
 def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
                       theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-                      c_p, Np, Nc, w_t, w_c, w_r, last_control):
+                      c_p, Np, Nc, w_t, w_terminal, w_r, last_control):
     """
     计算MPC目标函数关于控制序列的梯度
     
@@ -317,7 +327,7 @@ def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_fila
     J0 = _numba_mpc_objective(
         u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-        c_p, Np, Nc, w_t, w_c, w_r, last_control
+        c_p, Np, Nc, w_t, w_terminal, w_r, last_control
     )
     
     for i in range(Nc):
@@ -327,7 +337,7 @@ def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_fila
         J_plus = _numba_mpc_objective(
             u_plus, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
             theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_c, w_r, last_control
+            c_p, Np, Nc, w_t, w_terminal, w_r, last_control
         )
         
         grad[i] = (J_plus - J0) / eps
@@ -360,7 +370,7 @@ def _project_to_bounds(u, min_power, max_power):
 @jit(nopython=True, cache=True, fastmath=True)
 def _line_search(T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_filament,
                  theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-                 c_p, Np, Nc, w_t, w_c, w_r, last_control, alpha_init, rho, c1):
+                 c_p, Np, Nc, w_t, w_terminal, w_r, last_control, alpha_init, rho, c1):
     """
     回溯线搜索
     
@@ -381,7 +391,7 @@ def _line_search(T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_fil
     J0 = _numba_mpc_objective(
         u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-        c_p, Np, Nc, w_t, w_c, w_r, last_control
+        c_p, Np, Nc, w_t, w_terminal, w_r, last_control
     )
     
     grad_norm_sq = 0.0
@@ -395,7 +405,7 @@ def _line_search(T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_fil
         J_new = _numba_mpc_objective(
             u_new, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
             theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_c, w_r, last_control
+            c_p, Np, Nc, w_t, w_terminal, w_r, last_control
         )
         
         if J_new <= J0 - c1 * alpha * grad_norm_sq:
@@ -409,7 +419,7 @@ def _line_search(T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_fil
 @jit(nopython=True, cache=True, fastmath=True)
 def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
                    theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-                   c_p, Np, Nc, w_t, w_c, w_r, last_control, max_power, min_power,
+                   c_p, Np, Nc, w_t, w_terminal, w_r, last_control, max_power, min_power,
                    max_iter, tol, u_init):
     """
     投影梯度下降法求解MPC问题
@@ -442,7 +452,7 @@ def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
     best_cost = _numba_mpc_objective(
         u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-        c_p, Np, Nc, w_t, w_c, w_r, last_control
+        c_p, Np, Nc, w_t, w_terminal, w_r, last_control
     )
     best_u = u.copy()
     
@@ -452,7 +462,7 @@ def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         grad = _compute_gradient(
             T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
             theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_c, w_r, last_control
+            c_p, Np, Nc, w_t, w_terminal, w_r, last_control
         )
         
         grad_norm = 0.0
@@ -467,7 +477,7 @@ def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         alpha = _line_search(
             T_h, T_b, T_s, u, grad, setpoint, dt, T_env, T_cold, v_f, T_filament,
             theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_c, w_r, last_control, alpha_init, rho, c1
+            c_p, Np, Nc, w_t, w_terminal, w_r, last_control, alpha_init, rho, c1
         )
         
         u = u - alpha * grad
@@ -477,7 +487,7 @@ def _solve_mpc_pgd(T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
         cost = _numba_mpc_objective(
             u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
             theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_c, w_r, last_control
+            c_p, Np, Nc, w_t, w_terminal, w_r, last_control
         )
         
         if cost < best_cost:
@@ -1636,7 +1646,7 @@ class ControlMPCV2:
         self.const_prediction_horizon_v2 = self.profile_v2.get("prediction_horizon", 30)
         self.const_control_horizon_v2 = self.profile_v2.get("control_horizon", 10)
         self.const_weight_tracking_v2 = self.profile_v2.get("weight_tracking", 10.0)
-        self.const_weight_control_v2 = self.profile_v2.get("weight_control", 0.001)
+        self.const_weight_terminal_v2 = self.profile_v2.get("weight_terminal", 50.0)
         self.const_weight_rate_v2 = self.profile_v2.get("weight_rate", 0.1)
         self.const_max_iterations_v2 = self.profile_v2.get("max_iterations", 200)
         self.const_tolerance_v2 = self.profile_v2.get("tolerance", 1e-5)
@@ -1875,7 +1885,7 @@ class ControlMPCV2:
                 self.const_theta_7_v2, self.const_theta_8_v2, self.const_theta_9_v2,
                 self.const_filament_cross_section_heat_capacity_v2,
                 Np, Nc,
-                self.const_weight_tracking_v2, self.const_weight_control_v2,
+                self.const_weight_tracking_v2, self.const_weight_terminal_v2,
                 self.const_weight_rate_v2, self.last_control_v2
             )
         
@@ -1888,14 +1898,13 @@ class ControlMPCV2:
         )
         
         tracking_error = np.sum(self.const_weight_tracking_v2 * (T_s_pred[1:] - setpoint)**2)
-        control_effort = np.sum(self.const_weight_control_v2 * u_full**2)
+        terminal_cost = self.const_weight_terminal_v2 * (T_s_pred[Np] - setpoint)**2
         
+        rate_penalty = self.const_weight_rate_v2 * (u[0] - self.last_control_v2)**2
         if Nc > 1:
-            rate_penalty = np.sum(self.const_weight_rate_v2 * np.diff(u[:Nc])**2)
-        else:
-            rate_penalty = self.const_weight_rate_v2 * (u[0] - self.last_control_v2)**2
+            rate_penalty += np.sum(self.const_weight_rate_v2 * np.diff(u[:Nc])**2)
         
-        total_cost = tracking_error + control_effort + rate_penalty
+        total_cost = tracking_error + terminal_cost + rate_penalty
         
         return total_cost
     
@@ -2052,6 +2061,7 @@ class ControlMPCV2:
         # Extended Kalman Filter State Estimation
         # =====================================================================
         t_ekf_start = time.perf_counter()
+        t_model_step_start = time.perf_counter()
         
         if self.ekf_enabled_v2 and self.numba_enabled_v2:
             self.ekf_Q_v2 = np.eye(3) * self.ekf_Q_scale_v2
@@ -2080,6 +2090,8 @@ class ControlMPCV2:
                 self.const_theta_9_v2,
                 self.const_filament_cross_section_heat_capacity_v2
             )
+            
+            self.timing_model_step_v2 = (time.perf_counter() - t_model_step_start) * 1000.0
             
             self.ekf_state_v2 = x_new
             self.ekf_P_v2 = P_new
@@ -2128,6 +2140,9 @@ class ControlMPCV2:
         # =====================================================================
         
         if target_temp != 0.0:
+            t_optimize_start = time.perf_counter()
+            t_predict_start = time.perf_counter()
+            
             if self._hot_start_available_v2:
                 u_init = self._u_prev_v2.copy()
                 for i in range(len(u_init) - 1):
@@ -2163,7 +2178,7 @@ class ControlMPCV2:
                     self.const_prediction_horizon_v2,
                     self.const_control_horizon_v2,
                     self.const_weight_tracking_v2,
-                    self.const_weight_control_v2,
+                    self.const_weight_terminal_v2,
                     self.const_weight_rate_v2,
                     self.last_power_v2,
                     self.heater_max_power_v2,
@@ -2172,6 +2187,9 @@ class ControlMPCV2:
                     self.pgd_tolerance_v2,
                     u_init
                 )
+                
+                self.timing_predict_v2 = (time.perf_counter() - t_predict_start) * 1000.0
+                self.timing_optimize_v2 = (time.perf_counter() - t_optimize_start) * 1000.0
                 
                 power = u_opt[0]
                 self._u_prev_v2 = u_opt.copy()
@@ -2331,7 +2349,7 @@ class ControlMPCV2:
             "prediction_horizon": self.const_prediction_horizon_v2,
             "control_horizon": self.const_control_horizon_v2,
             "weight_tracking": self.const_weight_tracking_v2,
-            "weight_control": self.const_weight_control_v2,
+            "weight_terminal": self.const_weight_terminal_v2,
             "weight_rate": self.const_weight_rate_v2,
             "ekf_enabled": self.ekf_enabled_v2,
             "ekf_T_h": float(self.ekf_state_v2[0]),

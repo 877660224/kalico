@@ -661,8 +661,8 @@ class Heater:
                 temp_profile["weight_tracking"] = config_section.getfloat(
                     "weight_tracking", above=0.0, default=10.0
                 )
-                temp_profile["weight_control"] = config_section.getfloat(
-                    "weight_control", minval=0.0, default=0.001
+                temp_profile["weight_terminal"] = config_section.getfloat(
+                    "weight_terminal", minval=0.0, default=50.0
                 )
                 temp_profile["weight_rate"] = config_section.getfloat(
                     "weight_rate", minval=0.0, default=0.1
