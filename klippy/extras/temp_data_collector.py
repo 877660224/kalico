@@ -1079,7 +1079,7 @@ class TemperatureDataCollector:
                                 [MAX_TEMP=<最高温度>] [FILENAME=<文件名>]
                                 [STEP1_DURATION=<秒>] [STEP1_TARGET_TEMP=<温度>]
                                 [STEP2_DURATION=<秒>]
-                                [STEP3_TEMP=<温度>] [STEP3_STABLE_DURATION=<秒>]
+                                [STEP3_TEMP=<温度1,温度2,...>] [STEP3_STABLE_DURATION=<秒>]
                                 [STEP4_DURATION=<秒>]
                                 [PRBS_LOW_POWER=<比例>] [PRBS_HIGH_POWER=<比例>]
             
@@ -1093,8 +1093,9 @@ class TemperatureDataCollector:
             STEP1_DURATION: 阶段1开环阶跃最大持续时间，默认 50秒
             STEP1_TARGET_TEMP: 阶段1目标温度，默认 200°C
             STEP2_DURATION: 阶段2 PRBS激励持续时间，默认 190秒
-            STEP3_TEMP: 阶段3稳态目标温度，默认 450°C
-            STEP3_STABLE_DURATION: 阶段3稳态数据采集时长，默认 30秒
+            STEP3_TEMP: 阶段3稳态目标温度，支持多个温度值（逗号分隔），默认 450°C
+                        例如: STEP3_TEMP=300,400 或 STEP3_TEMP=200,300,400
+            STEP3_STABLE_DURATION: 阶段3每个温度点稳态数据采集时长，默认 30秒
             STEP4_DURATION: 阶段4冷却持续时间，默认 30秒
             
             PRBS参数：
@@ -1104,6 +1105,8 @@ class TemperatureDataCollector:
         示例：
             THERMAL_ID_CALIBRATE HEATER=extruder
             THERMAL_ID_CALIBRATE HEATER=extruder MAX_TEMP=480 STEP3_TEMP=420
+            THERMAL_ID_CALIBRATE HEATER=extruder STEP3_TEMP=300,400
+            THERMAL_ID_CALIBRATE HEATER=extruder STEP3_TEMP=200,300,400,500
         """
         heater_name = gcmd.get("HEATER", "extruder")
         sample_rate = gcmd.get_float("SAMPLE_RATE", 20.0, above=0.0)
@@ -1113,7 +1116,22 @@ class TemperatureDataCollector:
         step1_duration = gcmd.get_float("STEP1_DURATION", 50.0, above=0.0)
         step1_target_temp = gcmd.get_float("STEP1_TARGET_TEMP", 200.0, above=0.0)
         step2_duration = gcmd.get_float("STEP2_DURATION", 190.0, above=0.0)
-        step3_temp = gcmd.get_float("STEP3_TEMP", 450.0, above=0.0)
+        
+        step3_temp_raw = gcmd.get("STEP3_TEMP", "450")
+        step3_temps = []
+        for temp_str in step3_temp_raw.split(','):
+            temp_str = temp_str.strip()
+            if temp_str:
+                try:
+                    temp_val = float(temp_str)
+                    if temp_val <= 0:
+                        raise gcmd.error(f"STEP3_TEMP 温度值必须大于0: {temp_val}")
+                    step3_temps.append(temp_val)
+                except ValueError:
+                    raise gcmd.error(f"无法解析 STEP3_TEMP 温度值: '{temp_str}'")
+        if not step3_temps:
+            step3_temps = [450.0]
+        
         step3_stable_duration = gcmd.get_float("STEP3_STABLE_DURATION", 30.0, above=0.0)
         step4_duration = gcmd.get_float("STEP4_DURATION", 30.0, above=0.0)
         
@@ -1126,7 +1144,7 @@ class TemperatureDataCollector:
         except Exception as e:
             raise gcmd.error(f"未找到加热器 '{heater_name}': {e}")
 
-        total_duration = step1_duration + step2_duration + step3_stable_duration + step4_duration
+        total_duration = step1_duration + step2_duration + step3_stable_duration * len(step3_temps) + step4_duration
         
         gcmd.respond_info(
             f"启动综合热参数辨识实验\n"
@@ -1137,7 +1155,8 @@ class TemperatureDataCollector:
             f"\n阶段配置:\n"
             f"  阶段1: 开环阶跃响应 {step1_duration:.0f}秒 (满功率升温至{step1_target_temp}°C)\n"
             f"  阶段2: PRBS动态激励 {step2_duration:.0f}秒 ({prbs_low_power*100:.0f}%-{prbs_high_power*100:.0f}%功率)\n"
-            f"  阶段3: {step3_temp}°C稳态实验 (稳定后采集{step3_stable_duration:.0f}秒)\n"
+            f"  阶段3: 稳态实验 {len(step3_temps)}个温度点 ({', '.join([f'{t:.0f}°C' for t in step3_temps])})\n"
+            f"         每个温度点稳定后采集{step3_stable_duration:.0f}秒\n"
             f"  阶段4: 冷却阶段 {step4_duration:.0f}秒 (关闭加热，记录温度衰减)"
         )
 
@@ -1175,15 +1194,19 @@ class TemperatureDataCollector:
             )
             experiment_results["step2"] = step2_results
             
-            # 阶段3: 450°C稳态实验 (稳定后30秒数据采集)
-            gcmd.respond_info("\n" + "="*50)
-            gcmd.respond_info(f"阶段3: {step3_temp}°C稳态实验")
-            gcmd.respond_info("="*50)
-            self.current_phase = "steady_state"
-            step3_results = self._run_steady_state_measurement(
-                step3_temp, step3_stable_duration, gcmd
-            )
-            experiment_results["step3"] = step3_results
+            step3_all_results = []
+            for i, step3_temp in enumerate(step3_temps):
+                gcmd.respond_info("\n" + "="*50)
+                gcmd.respond_info(f"阶段3.{i+1}: {step3_temp}°C稳态实验 ({i+1}/{len(step3_temps)})")
+                gcmd.respond_info("="*50)
+                self.current_phase = f"steady_state_{i+1}"
+                step3_result = self._run_steady_state_measurement(
+                    step3_temp, step3_stable_duration, gcmd
+                )
+                step3_result["temp_index"] = i + 1
+                step3_result["temp_count"] = len(step3_temps)
+                step3_all_results.append(step3_result)
+            experiment_results["step3"] = step3_all_results
             
             # 阶段4: 冷却阶段 (30秒)
             gcmd.respond_info("\n" + "="*50)
@@ -1579,11 +1602,29 @@ class TemperatureDataCollector:
                 writer.writerow({"phase": "step1", "parameter": "initial_slope", "value": step1.get("initial_slope", 0), "unit": "°C/s"})
                 writer.writerow({"phase": "step1", "parameter": "reached_target", "value": step1.get("reached_target", False), "unit": ""})
                 
-                for step_name, step_key in [("step2", "step2"), ("step3", "step3"), ("step4", "step4")]:
-                    step_data = results.get(step_key, {})
-                    writer.writerow({"phase": step_name, "parameter": "target_temp", "value": step_data.get("target_temp", 0), "unit": "°C"})
-                    writer.writerow({"phase": step_name, "parameter": "avg_temp", "value": step_data.get("avg_temp", 0), "unit": "°C"})
-                    writer.writerow({"phase": step_name, "parameter": "avg_power", "value": step_data.get("avg_power", 0), "unit": "W"})
+                step2 = results.get("step2", {})
+                writer.writerow({"phase": "step2", "parameter": "target_temp", "value": step2.get("target_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step2", "parameter": "avg_temp", "value": step2.get("avg_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step2", "parameter": "avg_power", "value": step2.get("avg_power", 0), "unit": "W"})
+                
+                step3_results = results.get("step3", [])
+                if isinstance(step3_results, list):
+                    for i, step3_data in enumerate(step3_results):
+                        phase_name = f"step3_{i+1}"
+                        writer.writerow({"phase": phase_name, "parameter": "target_temp", "value": step3_data.get("target_temp", 0), "unit": "°C"})
+                        writer.writerow({"phase": phase_name, "parameter": "avg_temp", "value": step3_data.get("avg_temp", 0), "unit": "°C"})
+                        writer.writerow({"phase": phase_name, "parameter": "avg_power", "value": step3_data.get("avg_power", 0), "unit": "W"})
+                        writer.writerow({"phase": phase_name, "parameter": "stable_duration", "value": step3_data.get("stable_duration", 0), "unit": "s"})
+                else:
+                    step3_data = step3_results
+                    writer.writerow({"phase": "step3", "parameter": "target_temp", "value": step3_data.get("target_temp", 0), "unit": "°C"})
+                    writer.writerow({"phase": "step3", "parameter": "avg_temp", "value": step3_data.get("avg_temp", 0), "unit": "°C"})
+                    writer.writerow({"phase": "step3", "parameter": "avg_power", "value": step3_data.get("avg_power", 0), "unit": "W"})
+                
+                step4 = results.get("step4", {})
+                writer.writerow({"phase": "step4", "parameter": "target_temp", "value": step4.get("target_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step4", "parameter": "avg_temp", "value": step4.get("avg_temp", 0), "unit": "°C"})
+                writer.writerow({"phase": "step4", "parameter": "avg_power", "value": step4.get("avg_power", 0), "unit": "W"})
                 
                 step5 = results.get("step5", {})
                 writer.writerow({"phase": "step5", "parameter": "duration", "value": step5.get("duration", 0), "unit": "s"})
@@ -1612,13 +1653,37 @@ class TemperatureDataCollector:
             )
         
         gcmd.respond_info("\n稳态散热功率:")
-        for step_name, label in [("step2", "200°C"), ("step3", "300°C"), ("step4", "350°C")]:
-            step_data = results.get(step_name, {})
-            if step_data.get("avg_power"):
+        step2 = results.get("step2", {})
+        if step2.get("avg_power"):
+            gcmd.respond_info(
+                f"  PRBS阶段: P = {step2.get('avg_power', 0):.2f}W "
+                f"(T_avg = {step2.get('avg_temp', 0):.1f}°C)"
+            )
+        
+        step3_results = results.get("step3", [])
+        if isinstance(step3_results, list):
+            for i, step3_data in enumerate(step3_results):
+                if step3_data.get("avg_power"):
+                    gcmd.respond_info(
+                        f"  稳态{i+1} ({step3_data.get('target_temp', 0):.0f}°C): "
+                        f"P = {step3_data.get('avg_power', 0):.2f}W "
+                        f"(T_avg = {step3_data.get('avg_temp', 0):.1f}°C)"
+                    )
+        else:
+            step3_data = step3_results
+            if step3_data.get("avg_power"):
                 gcmd.respond_info(
-                    f"  {label}: P = {step_data.get('avg_power', 0):.2f}W "
-                    f"(T_avg = {step_data.get('avg_temp', 0):.1f}°C)"
+                    f"  稳态 ({step3_data.get('target_temp', 0):.0f}°C): "
+                    f"P = {step3_data.get('avg_power', 0):.2f}W "
+                    f"(T_avg = {step3_data.get('avg_temp', 0):.1f}°C)"
                 )
+        
+        step4 = results.get("step4", {})
+        if step4.get("avg_power"):
+            gcmd.respond_info(
+                f"  冷却阶段: P = {step4.get('avg_power', 0):.2f}W "
+                f"(T_avg = {step4.get('avg_temp', 0):.1f}°C)"
+            )
         
         step5 = results.get("step5", {})
         if step5.get("pulse_count"):
