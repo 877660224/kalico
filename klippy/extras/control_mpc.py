@@ -1553,8 +1553,16 @@ class ControlMPCV2:
             self.cmd_MPC_SET_V2,
             desc=self.cmd_MPC_SET_V2_help,
         )
+        gcode.register_mux_command(
+            "MPC_SENSOR_NOISE",
+            "HEATER",
+            heater.get_name(),
+            self.cmd_MPC_SENSOR_NOISE,
+            desc=self.cmd_MPC_SENSOR_NOISE_help,
+        )
     
     cmd_MPC_SET_V2_help = "设置MPC V2参数"
+    cmd_MPC_SENSOR_NOISE_help = "测量传感器噪声方差并保存到配置"
     
     def cmd_MPC_SET_V2(self, gcmd):
         """
@@ -1725,6 +1733,63 @@ class ControlMPCV2:
         raise self.printer_v2.command_error(
             f"Cannot activate '{name}' as MPC V2 control is not fully configured.\n\n"
             f"Ensure all theta parameters are defined for '{name}'."
+        )
+    
+    def cmd_MPC_SENSOR_NOISE(self, gcmd):
+        """
+        测量传感器噪声方差并保存到配置
+        
+        在传感器静止（无加热）时采集温度样本，计算方差
+        作为 EKF 的观测噪声 R 使用
+        
+        使用方法:
+            MPC_SENSOR_NOISE HEATER=extruder [SAMPLES=100] [DURATION=5.0]
+        
+        参数:
+            SAMPLES: 最小采样数量 (默认100)
+            DURATION: 采样持续时间，秒 (默认5.0)
+        """
+        min_samples = gcmd.get_int("SAMPLES", 100, minval=10)
+        sample_duration = gcmd.get_float("DURATION", 5.0, minval=1.0)
+        
+        gcmd.respond_info(
+            f"开始测量传感器噪声...\n"
+            f"采样数量: >= {min_samples}\n"
+            f"持续时间: {sample_duration}秒\n"
+            f"请确保传感器处于静止状态（无加热）"
+        )
+        
+        samples = []
+        start_time = self.heater_v2.reactor.monotonic()
+        end_time = start_time + sample_duration
+        
+        while self.heater_v2.reactor.monotonic() < end_time or len(samples) < min_samples:
+            eventtime = self.heater_v2.reactor.monotonic()
+            temp, _ = self.heater_v2.get_temp(eventtime)
+            samples.append(temp)
+        
+        if len(samples) < 10:
+            gcmd.respond_info("错误: 采样数量不足，无法计算噪声方差")
+            return
+        
+        mean_temp = sum(samples) / len(samples)
+        variance = sum((t - mean_temp) ** 2 for t in samples) / len(samples)
+        std = math.sqrt(variance)
+        
+        self.ekf_R_scale_v2 = variance
+        
+        configfile = self.printer_v2.lookup_object("configfile")
+        heater_name = self.heater_v2.get_name()
+        configfile.set(heater_name, "ekf_R_scale", f"{variance:.6g}")
+        
+        gcmd.respond_info(
+            f"传感器噪声测量完成:\n"
+            f"  采样数量: {len(samples)}\n"
+            f"  平均温度: {mean_temp:.2f}°C\n"
+            f"  标准差: {std:.4f}°C\n"
+            f"  方差: {variance:.6f}°C²\n"
+            f"  设置 ekf_R_scale = {variance:.6g}\n"
+            f"  已保存到打印机配置"
         )
     
     def _model_step_v2(self, T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament):
