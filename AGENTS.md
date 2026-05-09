@@ -105,3 +105,13 @@
 - When changing module loading, config parsing, plugin discovery, or printer startup flow, inspect `klippy/printer.py` first.
 - When changing motion/kinematics behavior, read `docs/Code_Overview.md` and relevant files in `klippy/kinematics/` and `klippy/chelper/` before editing.
 - When changing firmware build behavior, verify against `scripts/ci-build.sh`, `scripts/Dockerfile-build`, and `test/configs/*.config` instead of guessing from README prose.
+
+## Personal development workspace
+- **Personal config examples**: Store in `config/myconfig/` directory.
+  - Example: `config/myconfig/alps_serial_example.cfg`
+  - These are personal test configs, NOT committed to mainline `config/` directory.
+- **Personal dev docs**: Store in `docs/mydocs/` directory.
+  - Example: `docs/mydocs/MPC v2 算法技术文档.md`
+  - These are personal notes/experiments, NOT part of official `docs/` documentation.
+- **Purpose**: Keep experimental work isolated from production code and official documentation.
+- **Git tracking**: These directories may be gitignored or kept in separate branches for personal use.
