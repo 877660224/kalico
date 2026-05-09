@@ -1737,25 +1737,33 @@ class ControlMPCV2:
     
     def cmd_MPC_SENSOR_NOISE(self, gcmd):
         """
-        测量传感器噪声方差并保存到配置
+        测量传感器噪声方差并设置 EKF 参数
         
         在传感器静止（无加热）时采集温度样本，计算方差
         作为 EKF 的观测噪声 R 使用
+        Q 基于 R 和模型可靠性自动计算: Q = R * Q_FACTOR
         
         使用方法:
-            MPC_SENSOR_NOISE HEATER=extruder [SAMPLES=100] [DURATION=5.0]
+            MPC_SENSOR_NOISE HEATER=extruder [SAMPLES=100] [DURATION=5.0] [Q_FACTOR=0.2]
         
         参数:
             SAMPLES: 最小采样数量 (默认100)
             DURATION: 采样持续时间，秒 (默认5.0)
+            Q_FACTOR: Q/R 比例因子 (默认0.2)
+                - 0.1: 模型非常可靠
+                - 0.2: 模型较可靠 (推荐)
+                - 0.5: 模型一般可靠
+                - 1.0: 模型和传感器同等可靠
         """
         min_samples = gcmd.get_int("SAMPLES", 100, minval=10)
         sample_duration = gcmd.get_float("DURATION", 5.0, minval=1.0)
+        q_factor = gcmd.get_float("Q_FACTOR", 0.2, minval=0.01, maxval=10.0)
         
         gcmd.respond_info(
             f"开始测量传感器噪声...\n"
             f"采样数量: >= {min_samples}\n"
             f"持续时间: {sample_duration}秒\n"
+            f"Q/R 比例因子: {q_factor}\n"
             f"请确保传感器处于静止状态（无加热）"
         )
         
@@ -1776,20 +1784,25 @@ class ControlMPCV2:
         variance = sum((t - mean_temp) ** 2 for t in samples) / len(samples)
         std = math.sqrt(variance)
         
+        q_scale = variance * q_factor
+        
         self.ekf_R_scale_v2 = variance
+        self.ekf_Q_scale_v2 = q_scale
         
         configfile = self.printer_v2.lookup_object("configfile")
         heater_name = self.heater_v2.get_name()
         configfile.set(heater_name, "ekf_R_scale", f"{variance:.6g}")
+        configfile.set(heater_name, "ekf_Q_scale", f"{q_scale:.6g}")
         
         gcmd.respond_info(
             f"传感器噪声测量完成:\n"
             f"  采样数量: {len(samples)}\n"
             f"  平均温度: {mean_temp:.2f}°C\n"
             f"  标准差: {std:.4f}°C\n"
-            f"  方差: {variance:.6f}°C²\n"
-            f"  设置 ekf_R_scale = {variance:.6g}\n"
-            f"  已保存到打印机配置"
+            f"  方差(R): {variance:.6f}°C²\n"
+            f"  过程噪声(Q): {q_scale:.6f}°C²\n"
+            f"  Q/R比例: {q_factor}\n"
+            f"  已保存 ekf_R_scale 和 ekf_Q_scale 到配置"
         )
     
     def _model_step_v2(self, T_h, T_b, T_s, power, dt, T_env, T_cold, v_f, T_filament):
