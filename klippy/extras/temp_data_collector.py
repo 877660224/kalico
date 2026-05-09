@@ -136,10 +136,7 @@ class TemperatureDataCollector:
         # 挤出控制相关变量
         self._extrusion_active = False                # 是否正在挤出
         self._extrusion_speed = 0.0                   # 挤出速度 (mm/s)
-        self._extrusion_mode = "constant"             # 挤出模式
-        self._extrusion_duty = 0.5                    # 脉冲占空比
-        self._extrusion_last_toggle = 0.0             # 上次切换时间
-        self._extrusion_state = False                 # 当前挤出状态
+        self._extrusion_thread = None                 # 挤出线程
 
         # 开环控制相关变量
         self._open_loop_control = None                # 开环控制器实例
@@ -345,65 +342,43 @@ class TemperatureDataCollector:
         self._control_switched = False
         self._open_loop_control = None
 
-    def _start_extrusion(self, speed, mode="constant", duty=0.5):
+    def _start_extrusion(self, speed):
         """
-        启动挤出控制
+        启动挤出控制 - 使用 Klipper 的 toolhead.move() 方法
         
         参数：
             speed: 挤出速度 (mm/s)
-            mode: 挤出模式，"constant"（恒定）或 "pulse"（脉冲）
-            duty: 脉冲占空比 (0.0-1.0)
         """
         if speed <= 0:
             return
         
         try:
-            extruder = self.printer.lookup_object("toolhead")
-            gcode = self.printer.lookup_object("gcode")
-            
+            self.toolhead = self.printer.lookup_object("toolhead")
             self._extrusion_active = True
             self._extrusion_speed = speed
-            self._extrusion_mode = mode
-            self._extrusion_duty = duty
-            self._extrusion_last_toggle = self.reactor.monotonic()
-            self._extrusion_state = True
-            
-            gcode.run_script_from_command("M83")
-            extrusion_mm = speed * 0.1
-            gcode.run_script_from_command(f"G1 E{extrusion_mm:.4f} F{speed:.4f}")
+            self._extrusion_thread = threading.Thread(
+                target=self._extrusion_loop,
+                args=(speed,),
+                daemon=True
+            )
+            self._extrusion_thread.start()
             
         except Exception as e:
             logging.warning(f"启动挤出失败: {e}")
             self._extrusion_active = False
 
-    def _update_extrusion(self):
+    def _extrusion_loop(self, speed):
         """
-        更新挤出状态（用于脉冲模式）
-        
-        在脉冲模式下，根据当前时间和占空比切换挤出状态
+        挤出循环 - 持续挤出直到停止
         """
-        if not getattr(self, '_extrusion_active', False):
-            return
-        if self._extrusion_mode != "pulse":
-            return
-        
-        current_time = self.reactor.monotonic()
-        pulse_period = 2.0
-        elapsed = current_time - self._extrusion_last_toggle
-        
-        if elapsed >= pulse_period:
-            self._extrusion_last_toggle = current_time
-            self._extrusion_state = not self._extrusion_state
-            
-            try:
-                gcode = self.printer.lookup_object("gcode")
-                if self._extrusion_state:
-                    extrusion_mm = self._extrusion_speed * 0.1
-                    gcode.run_script_from_command(f"G1 E{extrusion_mm:.4f} F{self._extrusion_speed:.4f}")
-                else:
-                    pass
-            except Exception:
-                pass
+        try:
+            while self._extrusion_active:
+                pos = self.toolhead.get_position()
+                pos[3] += speed * 0.5
+                self.toolhead.move(pos, speed)
+                self.reactor.pause(self.reactor.monotonic() + 0.5)
+        except Exception as e:
+            logging.warning(f"挤出循环异常: {e}")
 
     def _stop_extrusion(self):
         """
@@ -411,12 +386,6 @@ class TemperatureDataCollector:
         """
         if not getattr(self, '_extrusion_active', False):
             return
-        
-        try:
-            gcode = self.printer.lookup_object("gcode")
-            gcode.run_script_from_command("M82")
-        except Exception:
-            pass
         
         self._extrusion_active = False
 
@@ -710,8 +679,6 @@ class TemperatureDataCollector:
                                    [COOLING_DURATION=<秒>]
                                    [COOLING_TARGET_TEMP=<温度>]
                                    [EXTRUSION_SPEED=<mm/s>]
-                                   [EXTRUSION_MODE=<constant|pulse>]
-                                   [EXTRUSION_DUTY=<0.0-1.0>]
             
         参数：
             HEATER: 加热器名称，默认 "extruder"
@@ -723,19 +690,14 @@ class TemperatureDataCollector:
             COOLING_MODE: 冷却模式，"duration"（固定时长）或 "target_temp"（目标温度），默认 "target_temp"
             COOLING_DURATION: 冷却持续时间（秒），当 COOLING_MODE=duration 时有效，默认 600
             COOLING_TARGET_TEMP: 冷却目标温度 (°C)，当 COOLING_MODE=target_temp 时有效，默认 30
-            EXTRUSION_SPEED: 挤出速度 (mm/s)，默认 0.0（不挤出）
-            EXTRUSION_MODE: 挤出模式，"constant"（恒定挤出）或 "pulse"（脉冲挤出），默认 "constant"
-            EXTRUSION_DUTY: 脉冲挤出占空比 (0.0-1.0)，仅在 EXTRUSION_MODE=pulse 时有效，默认 0.5
+            EXTRUSION_SPEED: 挤出速度 (mm/s)，默认 0.0（不挤出），使用 F 值指定速度
             
         示例：
             # 无挤出实验
             STEADY_STATE_CALIBRATE HEATER=extruder TEMP_POINTS=50,100,150,200,250,300
             
-            # 恒定挤出实验
+            # 挤出实验 (5 mm/s)
             STEADY_STATE_CALIBRATE HEATER=extruder EXTRUSION_SPEED=5.0
-            
-            # 脉冲挤出实验
-            STEADY_STATE_CALIBRATE HEATER=extruder EXTRUSION_SPEED=10.0 EXTRUSION_MODE=pulse EXTRUSION_DUTY=0.5
             
             # 冷却实验
             STEADY_STATE_CALIBRATE HEATER=extruder COOLING_MODE=duration COOLING_DURATION=300
@@ -755,8 +717,6 @@ class TemperatureDataCollector:
         cooling_target_temp = gcmd.get_float("COOLING_TARGET_TEMP", 30.0, above=0.0)
         
         extrusion_speed = gcmd.get_float("EXTRUSION_SPEED", 0.0, minval=0.0)
-        extrusion_mode = gcmd.get("EXTRUSION_MODE", "constant")
-        extrusion_duty = gcmd.get_float("EXTRUSION_DUTY", 0.5, minval=0.0, maxval=1.0)
         
         try:
             self.heater = self._get_heater(heater_name)
@@ -771,9 +731,6 @@ class TemperatureDataCollector:
 
         if cooling_mode not in ("duration", "target_temp"):
             raise gcmd.error("COOLING_MODE 必须是 'duration' 或 'target_temp'")
-        
-        if extrusion_mode not in ("constant", "pulse"):
-            raise gcmd.error("EXTRUSION_MODE 必须是 'constant' 或 'pulse'")
 
         gcmd.respond_info(
             f"启动 '{heater_name}' 的稳态阶梯响应校准\n"
@@ -786,9 +743,7 @@ class TemperatureDataCollector:
         if extrusion_speed > 0:
             gcmd.respond_info(
                 f"挤出参数:\n"
-                f"  挤出速度: {extrusion_speed} mm/s\n"
-                f"  挤出模式: {extrusion_mode}\n"
-                f"  占空比: {extrusion_duty*100:.0f}%" if extrusion_mode == "pulse" else ""
+                f"  挤出速度: {extrusion_speed} mm/s (F值)"
             )
         
         if cooling_enabled:
@@ -807,8 +762,7 @@ class TemperatureDataCollector:
                 
                 result = self._run_steady_state_measurement(
                     target_temp, stability_duration, gcmd, tolerance=stability_tolerance,
-                    extrusion_speed=extrusion_speed, extrusion_mode=extrusion_mode,
-                    extrusion_duty=extrusion_duty
+                    extrusion_speed=extrusion_speed
                 )
 
                 results.append(
@@ -817,8 +771,6 @@ class TemperatureDataCollector:
                         "avg_temp": result["avg_temp"],
                         "avg_power": result["avg_power"],
                         "extrusion_speed": extrusion_speed,
-                        "extrusion_mode": extrusion_mode,
-                        "extrusion_duty": extrusion_duty,
                     }
                 )
                 gcmd.respond_info(
@@ -854,7 +806,7 @@ class TemperatureDataCollector:
 
     def _run_steady_state_measurement(
         self, target_temp, stable_duration, gcmd, tolerance=1.0,
-        extrusion_speed=0.0, extrusion_mode="constant", extrusion_duty=0.5
+        extrusion_speed=0.0
     ):
         """
         执行单温度点稳态测量
@@ -871,9 +823,7 @@ class TemperatureDataCollector:
             tolerance: 温度波动容差 (°C)，默认值为 1.0
                       - None: 固定时长模式，不进行稳定性监测
                       - 数值: 稳定性监测模式，温度波动 ≤ tolerance 时认为稳定
-            extrusion_speed: 挤出速度 (mm/s)，默认 0.0
-            extrusion_mode: 挤出模式，"constant" 或 "pulse"
-            extrusion_duty: 脉冲挤出占空比
+            extrusion_speed: 挤出速度 (mm/s)，默认 0.0，使用 F 值指定速度
         
         返回：
             dict: 稳态测量结果，包含：
@@ -920,8 +870,8 @@ class TemperatureDataCollector:
             gcmd.respond_info(f"已达到目标温度，开始稳态数据采集 ({stable_duration}秒)")
         
         if extrusion_speed > 0:
-            gcmd.respond_info(f"启动挤出: {extrusion_speed} mm/s ({extrusion_mode})")
-            self._start_extrusion(extrusion_speed, extrusion_mode, extrusion_duty)
+            gcmd.respond_info(f"启动挤出: {extrusion_speed} mm/s")
+            self._start_extrusion(extrusion_speed)
         
         samples_at_start = len(self.data_buffer)
         measurement_start = self.reactor.monotonic()
@@ -935,9 +885,6 @@ class TemperatureDataCollector:
             
             if elapsed >= stable_duration:
                 break
-            
-            if extrusion_mode == "pulse":
-                self._update_extrusion()
             
             if current_time - last_report_time >= report_interval:
                 current_temp = self._get_sensor_temp()
@@ -1031,8 +978,7 @@ class TemperatureDataCollector:
 
         try:
             with open(filepath, "w", newline="") as csvfile:
-                fieldnames = ["target_temp", "avg_temp", "avg_power", 
-                              "extrusion_speed", "extrusion_mode", "extrusion_duty"]
+                fieldnames = ["target_temp", "avg_temp", "avg_power", "extrusion_speed"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 for r in results:
