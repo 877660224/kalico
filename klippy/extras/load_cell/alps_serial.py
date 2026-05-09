@@ -22,7 +22,6 @@ from klippy.extras.load_cell.interfaces import (
 )
 from klippy.mcu import MCU
 
-
 # 模块级常量
 ALPS_DEFAULT_BAUDRATE = 9600
 ALPS_DEFAULT_TIMEOUT = 0.05
@@ -35,11 +34,11 @@ ALPS_BUFFER_MULTIPLIER = 3
 class VirtualMCU:
     """
     USB 串口传感器的虚拟 MCU 对象
-    
+
     由于 ALPS 传感器通过 USB 串口直接连接到主机，
     没有真实的 Klipper MCU 固件。此类提供最小化的 MCU 接口兼容性，
     防止 McuLoadCellProbe 等组件因 None 引用而崩溃。
-    
+
     注意：此虚拟 MCU 不支持实际的固件命令操作。
     任何尝试调用 MCU 固件通信方法都会抛出明确的异常。
     """
@@ -122,34 +121,36 @@ class ALPSSerialSensor(LoadCellSensor):
     def __init__(self, config):
         self.printer = printer = config.get_printer()
         self.name = config.get_name().split()[-1]
-        
+
         # 串口配置
         self.serial_port = config.get("serial_port")
         self.baudrate = config.getint("baudrate", default=9600)
         self.timeout = config.getfloat("timeout", default=1.0)
-        
+
         # 固定采样率：2.6 kHz（不可修改）
         self.sps = ALPS_FIXED_SPS
-        
+
         # 数据解析模式：a=**,b=**（支持整数和小数，逗号后允许空格）
-        self.data_pattern = re.compile(r'a=(-?\d+\.?\d*),\s*b=(-?\d+\.?\d*)')
-        
+        self.data_pattern = re.compile(r"a=(-?\d+\.?\d*),\s*b=(-?\d+\.?\d*)")
+
         # 状态跟踪
         self.last_error_count = 0
         self.consecutive_fails = 0
         self.is_reading = False
         self.read_thread = None
-        
+
         # 使用队列在线程间传递数据（线程安全）
-        buffer_size = int(self.sps * ALPS_UPDATE_INTERVAL * ALPS_BUFFER_MULTIPLIER)
+        buffer_size = int(
+            self.sps * ALPS_UPDATE_INTERVAL * ALPS_BUFFER_MULTIPLIER
+        )
         self.data_queue: queue.Queue = queue.Queue(maxsize=buffer_size)
-        
+
         # 客户端回调（通过 BatchBulkHelper 管理）
         self.clients = []
-        
+
         # 初始化串口连接
         self.serial_conn: Optional[serial.Serial] = None
-        
+
         # 使用标准批量处理助手
         self.batch_bulk = bulk_sensor.BatchBulkHelper(
             self.printer,
@@ -158,23 +159,32 @@ class ALPSSerialSensor(LoadCellSensor):
             self._stop_measurements,
             ALPS_UPDATE_INTERVAL,
         )
-        
+
         # 注册事件处理器
         printer.register_event_handler("klippy:ready", self._handle_ready)
         printer.register_event_handler("klippy:shutdown", self._handle_shutdown)
-        
-        logging.info("ALPS sensor '%s' initialized on port %s at fixed 2600 Hz", 
-                     self.name, self.serial_port)
+
+        logging.info(
+            "ALPS sensor '%s' initialized on port %s at fixed 2600 Hz",
+            self.name,
+            self.serial_port,
+        )
 
     def _handle_ready(self):
         """Klipper 就绪时开始读取"""
         try:
             self._open_serial()
             self._start_reading()
-            logging.info("ALPS sensor '%s' started on port %s at fixed %d Hz", 
-                         self.name, self.serial_port, self.sps)
+            logging.info(
+                "ALPS sensor '%s' started on port %s at fixed %d Hz",
+                self.name,
+                self.serial_port,
+                self.sps,
+            )
         except Exception as e:
-            logging.error("Failed to start ALPS sensor '%s': %s", self.name, str(e))
+            logging.error(
+                "Failed to start ALPS sensor '%s': %s", self.name, str(e)
+            )
             raise self.printer.command_error(
                 f"ALPS sensor initialization failed: {str(e)}"
             )
@@ -183,24 +193,24 @@ class ALPSSerialSensor(LoadCellSensor):
         """关闭时停止读取并清理资源"""
         self._stop_reading()
         self._close_serial()
-        
+
         # 清空队列
         while not self.data_queue.empty():
             try:
                 self.data_queue.get_nowait()
             except queue.Empty:
                 break
-        
+
         # 重置状态
         self.consecutive_fails = 0
-        
+
         logging.info("ALPS sensor '%s' stopped and cleaned up", self.name)
 
     def _open_serial(self):
         """打开串口连接"""
         if self.serial_conn and self.serial_conn.is_open:
             return
-        
+
         try:
             self.serial_conn = serial.Serial(
                 port=self.serial_port,
@@ -208,10 +218,13 @@ class ALPSSerialSensor(LoadCellSensor):
                 timeout=self.timeout,
                 bytesize=serial.EIGHTBITS,
                 parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE
+                stopbits=serial.STOPBITS_ONE,
             )
-            logging.info("Serial port %s opened successfully at %d baud", 
-                         self.serial_port, self.baudrate)
+            logging.info(
+                "Serial port %s opened successfully at %d baud",
+                self.serial_port,
+                self.baudrate,
+            )
         except serial.SerialException as e:
             raise self.printer.command_error(
                 f"Failed to open serial port {self.serial_port}: {str(e)}"
@@ -230,12 +243,10 @@ class ALPSSerialSensor(LoadCellSensor):
         """启动后台读取线程"""
         if self.is_reading:
             return
-        
+
         self.is_reading = True
         self.read_thread = threading.Thread(
-            target=self._read_loop,
-            daemon=True,
-            name=f"ALPS-{self.name}"
+            target=self._read_loop, daemon=True, name=f"ALPS-{self.name}"
         )
         self.read_thread.start()
 
@@ -249,27 +260,27 @@ class ALPSSerialSensor(LoadCellSensor):
     def _read_loop(self):
         """解析串口数据的主循环（运行在独立线程中）"""
         line_buffer = ""
-        
+
         while self.is_reading:
             try:
                 if not self.serial_conn or not self.serial_conn.is_open:
                     time.sleep(0.1)
                     continue
-                
+
                 # 读取可用数据
                 if self.serial_conn.in_waiting > 0:
                     data = self.serial_conn.read(self.serial_conn.in_waiting)
-                    line_buffer += data.decode('utf-8', errors='ignore')
-                    
+                    line_buffer += data.decode("utf-8", errors="ignore")
+
                     # 处理完整的行
-                    while '\n' in line_buffer:
-                        line, line_buffer = line_buffer.split('\n', 1)
+                    while "\n" in line_buffer:
+                        line, line_buffer = line_buffer.split("\n", 1)
                         line = line.strip()
                         if line:
                             self._process_line(line)
                 else:
                     time.sleep(0.01)
-                    
+
             except Exception as e:
                 logging.error("ALPS sensor read error: %s", str(e))
                 self.last_error_count += 1
@@ -283,17 +294,18 @@ class ALPSSerialSensor(LoadCellSensor):
             if self.consecutive_fails > ALPS_MAX_CONSECUTIVE_FAILURES:
                 logging.warning(
                     "ALPS sensor '%s' has %d consecutive parse failures",
-                    self.name, self.consecutive_fails
+                    self.name,
+                    self.consecutive_fails,
                 )
             return
-        
+
         try:
             # 提取 b 值（卡尔曼滤波后）
             b_value = float(match.group(2))
-            
+
             # 获取当前时间戳（使用单调时间）
             eventtime = time.monotonic()
-            
+
             # 将数据放入队列（只存储时间戳和原始值，2 元素元组）
             raw_value = int(b_value * 1000)
             try:
@@ -305,27 +317,29 @@ class ALPSSerialSensor(LoadCellSensor):
                     self.data_queue.put_nowait((eventtime, raw_value))
                 except queue.Empty:
                     pass
-            
+
             # 成功解析，重置失败计数
             self.consecutive_fails = 0
-            
+
         except (ValueError, IndexError) as e:
-            logging.debug("Failed to parse ALPS data line '%s': %s", line, str(e))
+            logging.debug(
+                "Failed to parse ALPS data line '%s': %s", line, str(e)
+            )
             self.last_error_count += 1
             self.consecutive_fails += 1
 
     def get_mcu(self) -> MCU:
         """
         返回虚拟 MCU 对象
-        
+
         ALPS 传感器通过 USB 串口直接连接，没有真实的 Klipper MCU。
         返回 VirtualMCU 实例以符合 LoadCellSensor 接口契约，
         同时防止调用方因 None 引用而崩溃。
-        
+
         返回：
             VirtualMCU: 虚拟 MCU 对象，提供最小化的接口兼容性
         """
-        if not hasattr(self, '_virtual_mcu'):
+        if not hasattr(self, "_virtual_mcu"):
             self._virtual_mcu = VirtualMCU(self.printer, self.name)
         return self._virtual_mcu
 
@@ -364,35 +378,32 @@ class ALPSSerialSensor(LoadCellSensor):
     def _process_batch(self, eventtime) -> BulkAdcData:
         """批量处理回调，由 BatchBulkHelper 调用"""
         samples = []
-        
+
         # 从队列中收集样本
         while not self.data_queue.empty():
             try:
                 samples.append(self.data_queue.get_nowait())
             except queue.Empty:
                 break
-        
+
         if not samples:
             return None
-        
+
         # 记录缓冲区使用率（用于性能监控）
         buffer_usage = self.data_queue.qsize() / self.data_queue.maxsize * 100
         if buffer_usage > 80:
             logging.warning(
                 "ALPS sensor '%s' queue usage high: %.1f%%",
-                self.name, buffer_usage
+                self.name,
+                buffer_usage,
             )
-        
+
         # 返回批量数据
-        msg = {
-            "data": samples,
-            "errors": self.last_error_count,
-            "overflows": 0
-        }
-        
+        msg = {"data": samples, "errors": self.last_error_count, "overflows": 0}
+
         # 重置错误计数
         self.last_error_count = 0
-        
+
         return msg
 
 
