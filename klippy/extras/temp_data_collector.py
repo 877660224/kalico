@@ -683,14 +683,14 @@ class TemperatureDataCollector:
         参数：
             HEATER: 加热器名称，默认 "extruder"
             TEMP_POINTS: 温度设定点序列，逗号分隔，默认 "50,100,150,200,250,300"
-            TOLERANCE: 稳定性判断容差 (°C)，默认 0.1
-            DURATION: 稳定持续时间要求 (秒)，默认 180
+            COLLECT_TIME: 稳态数据采集时长 (秒)，默认 120
             FILENAME: 输出文件名
             COOLING_ENABLED: 是否启用冷却数据采集，默认 1（启用）
             COOLING_MODE: 冷却模式，"duration"（固定时长）或 "target_temp"（目标温度），默认 "target_temp"
             COOLING_DURATION: 冷却持续时间（秒），当 COOLING_MODE=duration 时有效，默认 600
             COOLING_TARGET_TEMP: 冷却目标温度 (°C)，当 COOLING_MODE=target_temp 时有效，默认 30
             EXTRUSION_SPEED: 挤出速度 (mm/s)，默认 0.0（不挤出），使用 F 值指定速度
+            注意: 稳态判定参数已硬编码 (波动 ≤ 1°C 持续 5s)
             
         示例：
             # 无挤出实验
@@ -705,8 +705,7 @@ class TemperatureDataCollector:
         """
         heater_name = gcmd.get("HEATER", "extruder")
         temp_points = gcmd.get("TEMP_POINTS", "50,100,150,200,250,300")
-        stability_tolerance = gcmd.get_float("TOLERANCE", 1, above=0.0)
-        stability_duration = gcmd.get_float("DURATION", 180.0, above=0.0)
+        collect_duration = gcmd.get_float("COLLECT_TIME", 120.0, above=0.0)
         filename = gcmd.get(
             "FILENAME", f"steady_state_{time.strftime('%Y%m%d%H%M')}.csv"
         )
@@ -735,8 +734,7 @@ class TemperatureDataCollector:
         gcmd.respond_info(
             f"启动 '{heater_name}' 的稳态阶梯响应校准\n"
             f"温度设定点: {temps}\n"
-            f"稳定性容差: {stability_tolerance}°C\n"
-            f"稳定持续时间: {stability_duration}s\n"
+            f"数据采集时间: {collect_duration}s\n"
             f"冷却数据采集: {'启用' if cooling_enabled else '禁用'}"
         )
         
@@ -761,7 +759,7 @@ class TemperatureDataCollector:
                 gcmd.respond_info(f"加热至 {target_temp}°C...")
                 
                 result = self._run_steady_state_measurement(
-                    target_temp, stability_duration, gcmd, tolerance=stability_tolerance,
+                    target_temp, collect_duration, gcmd,
                     extrusion_speed=extrusion_speed
                 )
 
@@ -804,25 +802,30 @@ class TemperatureDataCollector:
             summary += f"\n冷却阶段: 从 {cooling_data['start_temp']:.1f}°C 降至 {cooling_data['end_temp']:.1f}°C，耗时 {cooling_data['duration']:.1f}s"
         gcmd.respond_info(summary)
 
+    # 稳态判定参数 - 硬编码
+    STABLE_TOLERANCE = 1.0   # 温度波动容差 (°C)
+    STABLE_WAIT_TIME = 5.0    # 稳态判定时间 (秒)
+
     def _run_steady_state_measurement(
-        self, target_temp, stable_duration, gcmd, tolerance=1.0,
+        self, target_temp, collect_duration, gcmd, tolerance=None,
         extrusion_speed=0.0
     ):
         """
         执行单温度点稳态测量
         
         使用PID闭环控制达到目标温度，采集稳态数据。
-        支持两种模式：
-        1. 稳定性监测模式：监测温度波动，达到稳定后采集数据
-        2. 固定时长模式：达到目标温度后直接采集固定时长数据
+        
+        流程:
+        1. 加热到目标温度
+        2. 等待温度稳定 (波动 ≤ 1°C 持续 5秒)
+        3. 启动挤出 (可选)
+        4. 采集稳态数据
         
         参数：
             target_temp: 目标温度 (°C)
-            stable_duration: 稳态数据采集时长 (秒)
+            collect_duration: 稳态数据采集时长 (秒)
             gcmd: G-code命令对象
-            tolerance: 温度波动容差 (°C)，默认值为 1.0
-                      - None: 固定时长模式，不进行稳定性监测
-                      - 数值: 稳定性监测模式，温度波动 ≤ tolerance 时认为稳定
+            tolerance: 保留参数，已硬编码 (ignored)
             extrusion_speed: 挤出速度 (mm/s)，默认 0.0，使用 F 值指定速度
         
         返回：
@@ -830,7 +833,7 @@ class TemperatureDataCollector:
                 - target_temp: 目标温度 (°C)
                 - avg_temp: 平均温度 (°C)
                 - avg_power: 平均功率 (W)
-                - stable_duration: 稳态采集时长 (秒)
+                - collect_duration: 稳态采集时长 (秒)
                 - samples_count: 采集样本数
         """
         pheaters = self.printer.lookup_object("heaters")
@@ -840,38 +843,43 @@ class TemperatureDataCollector:
         
         pheaters.set_temperature(self.heater, target_temp, wait=True)
         
-        if tolerance is not None:
-            gcmd.respond_info(f"等待 {target_temp}°C 温度稳定 (容差: {tolerance}°C)...")
+        gcmd.respond_info(
+            f"等待 {target_temp}°C 温度稳定 "
+            f"(波动 ≤ {self.STABLE_TOLERANCE}°C 持续 {self.STABLE_WAIT_TIME}s)..."
+        )
+        
+        stable_start = None
+        check_interval = 1.0
+        last_temps = []
+        
+        while True:
+            current_temp = self._get_sensor_temp()
             
-            stable_start = None
-            check_interval = 1.0
-            last_temps = []
+            last_temps.append(current_temp)
+            if len(last_temps) > int(self.STABLE_WAIT_TIME / check_interval):
+                last_temps.pop(0)
             
-            while True:
-                current_temp = self._get_sensor_temp()
-                
-                last_temps.append(current_temp)
-                if len(last_temps) > int(stable_duration / check_interval):
-                    last_temps.pop(0)
-                
-                if len(last_temps) >= 3:
-                    temp_range = max(last_temps) - min(last_temps)
-                    if temp_range <= tolerance:
-                        if stable_start is None:
-                            stable_start = self.reactor.monotonic()
-                        elif (self.reactor.monotonic() - stable_start) >= stable_duration:
-                            gcmd.respond_info(f"温度 {target_temp}°C 已达到稳定状态")
-                            break
-                    else:
-                        stable_start = None
-                
-                self.reactor.pause(self.reactor.monotonic() + check_interval)
-        else:
-            gcmd.respond_info(f"已达到目标温度，开始稳态数据采集 ({stable_duration}秒)")
+            if len(last_temps) >= 3:
+                temp_range = max(last_temps) - min(last_temps)
+                if temp_range <= self.STABLE_TOLERANCE:
+                    if stable_start is None:
+                        stable_start = self.reactor.monotonic()
+                    elif (self.reactor.monotonic() - stable_start) >= self.STABLE_WAIT_TIME:
+                        gcmd.respond_info(
+                            f"温度 {target_temp}°C 已达到稳定状态 "
+                            f"(波动 {temp_range:.2f}°C)"
+                        )
+                        break
+                else:
+                    stable_start = None
+            
+            self.reactor.pause(self.reactor.monotonic() + check_interval)
         
         if extrusion_speed > 0:
             gcmd.respond_info(f"启动挤出: {extrusion_speed} mm/s")
             self._start_extrusion(extrusion_speed)
+        
+        gcmd.respond_info(f"开始稳态数据采集 ({collect_duration}秒)")
         
         samples_at_start = len(self.data_buffer)
         measurement_start = self.reactor.monotonic()
@@ -883,17 +891,17 @@ class TemperatureDataCollector:
             current_time = self.reactor.monotonic()
             elapsed = current_time - measurement_start
             
-            if elapsed >= stable_duration:
+            if elapsed >= collect_duration:
                 break
             
             if current_time - last_report_time >= report_interval:
                 current_temp = self._get_sensor_temp()
-                remaining = stable_duration - elapsed
+                remaining = collect_duration - elapsed
                 extrusion_info = ""
                 if extrusion_speed > 0:
                     extrusion_info = f", 挤出: {extrusion_speed} mm/s"
                 gcmd.respond_info(
-                    f"  稳态采集中... {elapsed:.0f}s/{stable_duration:.0f}s, "
+                    f"  稳态采集中... {elapsed:.0f}s/{collect_duration:.0f}s, "
                     f"当前温度: {current_temp:.1f}°C{extrusion_info}"
                 )
                 last_report_time = current_time
@@ -903,14 +911,14 @@ class TemperatureDataCollector:
         self._stop_extrusion()
         
         samples_collected = len(self.data_buffer) - samples_at_start
-        avg_temp = self._calculate_average_temp(stable_duration)
-        avg_power = self._calculate_average_power(stable_duration)
+        avg_temp = self._calculate_average_temp(collect_duration)
+        avg_power = self._calculate_average_power(collect_duration)
         
         results = {
             "target_temp": target_temp,
             "avg_temp": avg_temp,
             "avg_power": avg_power,
-            "stable_duration": stable_duration,
+            "collect_duration": collect_duration,
             "samples_count": samples_collected,
         }
         
