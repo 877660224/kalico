@@ -1018,7 +1018,7 @@ class TemperatureDataCollector:
             
             if extrusion_speed > 0 and extrusion_end_time is not None:
                 if current_time >= extrusion_end_time and self._extrusion_active:
-                    gcmd.respond_info(f"挤出结束，停止挤出")
+                    gcmd.respond_info("挤出结束，停止挤出")
                     self._stop_extrusion()
                     extrusion_end_time = None
             
