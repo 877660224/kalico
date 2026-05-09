@@ -46,12 +46,10 @@
 
 import csv
 import logging
-import math
 import os
 import random
 import threading
 import time
-from .control_mpc import TuningControl
 
 # =============================================================================
 # 全局常量定义 (Global Constants)
@@ -2040,10 +2038,10 @@ class ThermalParameterEstimator:
         )
 
         gcmd.respond_info(
-            f"推荐分析方法:\n"
-            f"  1. 从阶跃响应识别时间常数\n"
-            f"  2. 使用ARX/ARMAX模型估计传递函数\n"
-            f"  3. 应用子空间辨识方法建立多节点模型"
+            "推荐分析方法:\n"
+            "  1. 从阶跃响应识别时间常数\n"
+            "  2. 使用ARX/ARMAX模型估计传递函数\n"
+            "  3. 应用子空间辨识方法建立多节点模型"
         )
 
     def _load_csv(self, filepath):

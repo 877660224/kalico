@@ -8,11 +8,10 @@ from __future__ import annotations
 import logging
 import queue
 import re
+import serial
 import threading
 import time
 from typing import Optional
-
-import serial
 
 from klippy.extras import bulk_sensor
 from klippy.extras.load_cell.interfaces import (

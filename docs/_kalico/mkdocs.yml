@@ -36,6 +36,9 @@ plugins:
   redirects:
     redirect_maps:
       'Danger_Features.md': 'Kalico_Additions.md'
+  exclude:
+    glob:
+      - mydocs/*
 
 # Website layout configuration (using mkdocs-material theme)
 theme:

@@ -25,11 +25,11 @@
 # =============================================================================
 
 import csv
+from datetime import datetime
 import logging
 import os
 import threading
 import time
-from datetime import datetime
 
 
 # =============================================================================

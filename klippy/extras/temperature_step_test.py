@@ -6,7 +6,7 @@
 
 import logging
 import os
-from .control_mpc import MpcCalibrate, TuningControl, ControlMPC
+from .control_mpc import MpcCalibrate, TuningControl
 from .heaters import ControlBangBang
 
 class LoggingControlWrapper:
@@ -276,7 +276,6 @@ class TempStepTest(MpcCalibrate):
         """
         保存热测试数据到CSV文件（包含温度和PWM数据）
         """
-        import os
         import time
         
         # 获取家目录并创建数据路径
