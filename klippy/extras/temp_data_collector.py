@@ -51,7 +51,6 @@ import os
 import random
 import threading
 import time
-from .control_mpc import TuningControl
 
 # =============================================================================
 # 全局常量定义 (Global Constants)
@@ -62,6 +61,10 @@ PIN_MIN_TIME = 0.100
 
 # 默认环境温度（摄氏度），用于热损耗计算
 AMBIENT_TEMP = 25.0
+
+# 温度传感器异常值检测范围
+TEMP_MIN_VALID = -50.0
+TEMP_MAX_VALID = 600.0
 
 
 # =============================================================================
@@ -119,29 +122,31 @@ class TemperatureDataCollector:
         self.max_heater_power = config.getfloat("max_heater_power", 60.0, above=0.0)
 
         # 采集状态变量
-        self.is_collecting = False                    # 是否正在采集
-        self.collection_lock = threading.Lock()       # 线程锁，保护数据缓冲区
-        self.current_experiment = None                # 当前实验名称
-        self.current_phase = "heating"                # 当前阶段：heating/cooling
-        self.data_buffer = []                         # 数据缓存列表
-        self.sample_timer = None                      # 采样定时器句柄
-        self.start_time = 0.0                         # 实验开始时间
+        self.collection_lock = threading.Lock()
+        self.state_lock = threading.Lock()
+        self._is_collecting = False
+        self._current_experiment = None
+        self._current_phase = "heating"
+        self.data_buffer = []
+        self.sample_timer = None
+        self.start_time = 0.0
+        self._last_valid_temp = AMBIENT_TEMP
 
         # 加热器相关对象
-        self.heater = None                            # 加热器对象引用
-        self.heater_name = None                       # 加热器名称
-        self.pwm_pin = None                           # PWM引脚对象（保留扩展用）
-        self.sensor = None                            # 温度传感器对象（保留扩展用）
+        self.heater = None
+        self.heater_name = None
+        self.pwm_pin = None
+        self.sensor = None
 
         # 挤出控制相关变量
-        self._extrusion_active = False                # 是否正在挤出
-        self._extrusion_speed = 0.0                   # 挤出速度 (mm/s)
-        self._extrusion_thread = None                 # 挤出线程
+        self._extrusion_active = False
+        self._extrusion_speed = 0.0
+        self._extrusion_handler = None
 
         # 开环控制相关变量
-        self._open_loop_control = None                # 开环控制器实例
-        self._original_control = None                 # 保存的原控制器（用于恢复）
-        self._control_switched = False                # 控制器是否已切换
+        self._open_loop_control = None
+        self._original_control = None
+        self._control_switched = False
 
         # 注册事件处理器
         # klippy:ready - 打印机初始化完成时触发
@@ -217,6 +222,35 @@ class TemperatureDataCollector:
         self._stop_collection()
 
     # =========================================================================
+    # 属性访问器 - 提供线程安全的属性访问
+    # =========================================================================
+
+    @property
+    def is_collecting(self):
+        with self.state_lock:
+            return self._is_collecting
+
+    @property
+    def current_experiment(self):
+        with self.state_lock:
+            return self._current_experiment
+
+    @current_experiment.setter
+    def current_experiment(self, value):
+        with self.state_lock:
+            self._current_experiment = value
+
+    @property
+    def current_phase(self):
+        with self.state_lock:
+            return self._current_phase
+
+    @current_phase.setter
+    def current_phase(self, value):
+        with self.state_lock:
+            self._current_phase = value
+
+    # =========================================================================
     # 辅助方法 (Helper Methods)
     # =========================================================================
 
@@ -236,17 +270,46 @@ class TemperatureDataCollector:
         pheaters = self.printer.lookup_object("heaters")
         return pheaters.lookup_heater(heater_name)
 
+    def _validate_temperature(self, temp):
+        """
+        验证温度值是否在合理范围内
+        
+        参数：
+            temp: 待验证的温度值
+            
+        返回：
+            bool: 温度值是否有效
+        """
+        if not isinstance(temp, (int, float)):
+            return False
+        if math.isnan(temp) or math.isinf(temp):
+            return False
+        if temp < TEMP_MIN_VALID or temp > TEMP_MAX_VALID:
+            return False
+        return True
+
     def _get_sensor_temp(self):
         """
         获取当前传感器温度
         
         返回：
-            当前温度值（摄氏度），如果加热器未初始化则返回 0.0
+            当前温度值（摄氏度），如果加热器未初始化则返回上次有效温度或环境温度
         """
         if self.heater is None:
-            return 0.0
-        # get_temp() 返回 (当前温度, 目标温度) 元组
-        return self.heater.get_temp(self.reactor.monotonic())[0]
+            return self._last_valid_temp
+        
+        try:
+            temp = self.heater.get_temp(self.reactor.monotonic())[0]
+            
+            if self._validate_temperature(temp):
+                self._last_valid_temp = temp
+                return temp
+            else:
+                logging.warning(f"温度传感器返回异常值: {temp}，使用上次有效温度: {self._last_valid_temp}")
+                return self._last_valid_temp
+        except Exception as e:
+            logging.warning(f"获取温度失败: {e}，使用上次有效温度: {self._last_valid_temp}")
+            return self._last_valid_temp
 
     def _get_pwm_value(self):
         """
@@ -344,7 +407,7 @@ class TemperatureDataCollector:
 
     def _start_extrusion(self, speed):
         """
-        启动挤出控制 - 使用 Klipper 的 toolhead.move() 方法
+        启动挤出控制 - 使用 reactor 回调实现线程安全的挤出
         
         参数：
             speed: 挤出速度 (mm/s)
@@ -353,41 +416,71 @@ class TemperatureDataCollector:
             return
         
         try:
-            self.toolhead = self.printer.lookup_object("toolhead")
-            self._extrusion_active = True
-            self._extrusion_speed = speed
-            self._extrusion_thread = threading.Thread(
-                target=self._extrusion_loop,
-                args=(speed,),
-                daemon=True
-            )
-            self._extrusion_thread.start()
+            with self.state_lock:
+                if self._extrusion_active:
+                    logging.warning("挤出已在进行中")
+                    return
+                
+                self.toolhead = self.printer.lookup_object("toolhead")
+                self._extrusion_active = True
+                self._extrusion_speed = speed
+            
+            self._extrusion_callback(self.reactor.monotonic())
             
         except Exception as e:
-            logging.warning(f"启动挤出失败: {e}")
-            self._extrusion_active = False
+            with self.state_lock:
+                self._extrusion_active = False
+            logging.error(f"启动挤出失败: {e}")
 
-    def _extrusion_loop(self, speed):
+    def _extrusion_callback(self, eventtime):
         """
-        挤出循环 - 持续挤出直到停止
+        Reactor 挤出回调 - 在 reactor 线程中执行挤出操作
+        
+        参数：
+            eventtime: 事件时间戳
         """
+        with self.state_lock:
+            if not self._extrusion_active:
+                return False
+            speed = self._extrusion_speed
+        
         try:
-            while self._extrusion_active:
-                pos = self.toolhead.get_position()
-                pos[3] += speed * 0.5
-                self.toolhead.move(pos, speed)
-                self.reactor.pause(self.reactor.monotonic() + 0.5)
+            pos = self.toolhead.get_position()
+            pos[3] += speed * 0.5
+            self.toolhead.move(pos, speed)
+            
+            with self.state_lock:
+                if self._extrusion_active:
+                    self._extrusion_handler = self.reactor.register_callback(
+                        self._extrusion_callback
+                    )
+                    self.reactor.pause(self.reactor.monotonic() + 0.5)
+            
         except Exception as e:
-            logging.warning(f"挤出循环异常: {e}")
+            logging.error(f"挤出回调异常: {e}")
+            with self.state_lock:
+                self._extrusion_active = False
+            return False
+        
+        return self._extrusion_active
 
     def _stop_extrusion(self):
         """
         停止挤出
         """
-        if not getattr(self, '_extrusion_active', False):
-            return
+        with self.state_lock:
+            if not self._extrusion_active:
+                return
+            
+            self._extrusion_active = False
+            self._extrusion_speed = 0.0
         
-        self._extrusion_active = False
+        if self._extrusion_handler is not None:
+            try:
+                self.reactor.unregister_timer(self._extrusion_handler)
+            except Exception:
+                pass
+            self._extrusion_handler = None
 
     # =========================================================================
     # 数据采集核心方法 (Data Collection Core Methods)
@@ -449,13 +542,13 @@ class TemperatureDataCollector:
         注意：
             该方法使用线程锁确保状态变更的原子性。
         """
-        with self.collection_lock:
-            if self.is_collecting:
+        with self.state_lock:
+            if self._is_collecting:
                 return False
             
-            self.is_collecting = True
-            self.current_experiment = experiment_name
-            self.current_phase = "heating"
+            self._is_collecting = True
+            self._current_experiment = experiment_name
+            self._current_phase = "heating"
             self.data_buffer = []
             self.start_time = self.reactor.monotonic()
 
@@ -487,9 +580,15 @@ class TemperatureDataCollector:
         停止采样定时器，设置采集状态为False。
         注意：该方法不保存数据，需调用 _save_data_to_csv() 单独保存。
         """
-        self.is_collecting = False
+        with self.state_lock:
+            self._is_collecting = False
+            self._current_experiment = None
+        
         if self.sample_timer is not None:
-            self.reactor.unregister_timer(self.sample_timer)
+            try:
+                self.reactor.unregister_timer(self.sample_timer)
+            except Exception:
+                pass
             self.sample_timer = None
 
     def _save_data_to_csv(self, filename):
