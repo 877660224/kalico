@@ -6,7 +6,7 @@
 from klippy.configfile import ConfigWrapper
 from klippy.printer import Printer, SubsystemComponentCollection
 
-from . import ads1220, ads131m0x, alps_serial, hx71x
+from . import ads131m0x, ads1220, alps_serial, hx71x
 from .load_cell import LoadCell
 
 
