@@ -1749,15 +1749,15 @@ class ControlMPCV2:
         参数:
             SAMPLES: 最小采样数量 (默认100)
             DURATION: 采样持续时间，秒 (默认5.0)
-            Q_FACTOR: Q/R 比例因子 (默认0.2)
-                - 0.1: 模型非常可靠
-                - 0.2: 模型较可靠 (推荐)
+            Q_FACTOR: Q/R 比例因子 (默认0.1)
+                - 0.05: 模型极其可靠 (R²>0.999)
+                - 0.1: 模型非常可靠 (推荐，R²>0.999)
                 - 0.5: 模型一般可靠
                 - 1.0: 模型和传感器同等可靠
         """
         min_samples = gcmd.get_int("SAMPLES", 100, minval=10)
         sample_duration = gcmd.get_float("DURATION", 5.0, minval=1.0)
-        q_factor = gcmd.get_float("Q_FACTOR", 0.2, minval=0.01, maxval=10.0)
+        q_factor = gcmd.get_float("Q_FACTOR", 0.1, minval=0.01, maxval=10.0)
         
         gcmd.respond_info(
             f"开始测量传感器噪声...\n"
