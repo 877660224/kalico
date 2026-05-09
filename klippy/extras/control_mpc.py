@@ -299,18 +299,117 @@ def _ekf_step(x, P, z_meas, power, dt, T_env, T_cold, v_f, T_filament, Q, R,
 
 
 # =============================================================================
-# 投影梯度下降法 MPC求解器 - Numba优化实现
-# Projected Gradient Descent MPC Solver - Numba Optimized Implementation
+# 伴随变量法梯度计算 - 解析梯度
+# Adjoint Sensitivity Method for Analytical Gradient
 # =============================================================================
 
 @jit(nopython=True, cache=True, fastmath=True)
-def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
-                      theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-                      c_p, Np, Nc, w_t, w_terminal, w_r, last_control):
+def _adjoint_backward_pass(T_s_pred, setpoint, T_h_pred, T_b_pred, F_list, Np, w_t, w_terminal):
     """
-    计算MPC目标函数关于控制序列的梯度
+    伴随变量后向递推
     
-    使用有限差分法近似梯度
+    终端条件: λ(N_p) = ∂J/∂x(N_p)
+    递推关系: λ(k) = F_k^T * λ(k+1) + ∂J_k/∂x(k)
+    
+    参数:
+        T_s_pred: 传感器温度预测轨迹 (长度Np+1)
+        setpoint: 目标温度
+        T_h_pred: 加热器温度预测轨迹
+        T_b_pred: 加热块温度预测轨迹
+        F_list: 雅可比矩阵列表 (长度Np)
+        Np: 预测时域
+        w_t: 跟踪权重
+        w_terminal: 终端权重
+    
+    返回:
+        lambda_list: 伴随变量轨迹 (长度Np+1)
+    """
+    lambda_list = np.zeros((Np + 1, 3))
+    
+    error_Np = T_s_pred[Np] - setpoint
+    
+    dJ_dTs_Np = 2.0 * (w_t + w_terminal) * error_Np
+    lambda_list[Np, 0] = 0.0
+    lambda_list[Np, 1] = 0.0
+    lambda_list[Np, 2] = dJ_dTs_Np
+    
+    for k in range(Np - 1, -1, -1):
+        F_T = np.zeros((3, 3))
+        F_T[0, 0] = F_list[k, 0, 0]
+        F_T[1, 0] = F_list[k, 0, 1]
+        F_T[2, 0] = F_list[k, 0, 2]
+        F_T[0, 1] = F_list[k, 1, 0]
+        F_T[1, 1] = F_list[k, 1, 1]
+        F_T[2, 1] = F_list[k, 1, 2]
+        F_T[0, 2] = F_list[k, 2, 0]
+        F_T[1, 2] = F_list[k, 2, 1]
+        F_T[2, 2] = F_list[k, 2, 2]
+        
+        lambda_next = np.array([lambda_list[k + 1, 0], lambda_list[k + 1, 1], lambda_list[k + 1, 2]])
+        
+        dJ_dx = np.zeros(3)
+        if k >= 0:
+            error = T_s_pred[k + 1] - setpoint
+            dJ_dx[2] = 2.0 * w_t * error
+        
+        lambda_curr = F_T @ lambda_next + dJ_dx
+        
+        lambda_list[k, 0] = lambda_curr[0]
+        lambda_list[k, 1] = lambda_curr[1]
+        lambda_list[k, 2] = lambda_curr[2]
+    
+    return lambda_list
+
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _compute_jacobian_list(T_h_pred, T_b_pred, T_s_pred, u_seq, dt, T_env, T_cold, v_f, T_filament,
+                            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p, Np):
+    """
+    计算预测时域内所有时刻的雅可比矩阵 F_k
+    
+    参数:
+        T_h_pred, T_b_pred, T_s_pred: 预测状态轨迹
+        u_seq: 控制序列
+        dt: 时间步长
+        其他: 模型参数
+    
+    返回:
+        F_list: 雅可比矩阵列表 (Np, 3, 3)
+    """
+    F_list = np.zeros((Np, 3, 3))
+    T_env_K = T_env + 273.15
+    
+    for k in range(Np):
+        T_b_k = T_b_pred[k]
+        T_b_K = T_b_k + 273.15
+        
+        F_list[k, 0, 0] = 1.0 - theta_1 * dt
+        F_list[k, 0, 1] = theta_1 * dt
+        F_list[k, 0, 2] = 0.0
+        
+        F_list[k, 1, 0] = theta_2 * dt
+        F_list[k, 1, 1] = 1.0 - (theta_3 + theta_5 + theta_6 + 4.0 * theta_7 * T_b_K**3 + v_f * c_p * theta_9) * dt
+        F_list[k, 1, 2] = -theta_3 * dt
+        
+        F_list[k, 2, 0] = 0.0
+        F_list[k, 2, 1] = theta_4 * dt
+        F_list[k, 2, 2] = 1.0 - theta_4 * dt
+    
+    return F_list
+
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _compute_gradient_adjoint(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
+                              theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                              c_p, Np, Nc, w_t, w_terminal, w_r, last_control):
+    """
+    使用伴随变量法计算MPC目标函数关于控制序列的梯度
+    
+    相比有限差分法，伴随变量法仅需一次前向预测和一次后向递推，
+    时间复杂度从 O(N_c * N_p) 降低到 O(N_p)
+    
+    梯度公式:
+        ∂J/∂u_j = ∂J_rate/∂u_j + λ_1(j+1) * θ_8 * Δt
     
     参数:
         T_h, T_b, T_s: 初始状态
@@ -321,28 +420,63 @@ def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_fila
     返回:
         grad: 梯度向量 (长度Nc)
     """
-    grad = np.zeros(Nc)
-    eps = 1e-4
+    u_full = np.zeros(Np)
+    for i in range(Np):
+        idx = i
+        if idx > Nc - 1:
+            idx = Nc - 1
+        u_full[i] = u[idx]
     
-    J0 = _numba_mpc_objective(
-        u, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
+    T_h_pred, T_b_pred, T_s_pred = _numba_predict_trajectory(
+        T_h, T_b, T_s, u_full, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+    )
+    
+    F_list = _compute_jacobian_list(
+        T_h_pred, T_b_pred, T_s_pred, u_full, dt, T_env, T_cold, v_f, T_filament,
+        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p, Np
+    )
+    
+    lambda_list = _adjoint_backward_pass(T_s_pred, setpoint, T_h_pred, T_b_pred, F_list, Np, w_t, w_terminal)
+    
+    grad = np.zeros(Nc)
+    for j in range(Nc):
+        if j == 0:
+            dJ_rate_du = 2.0 * w_r * (u[0] - last_control)
+        else:
+            dJ_rate_du = 2.0 * w_r * (u[j] - u[j - 1])
+        
+        k = j + 1
+        if k > Np:
+            k = Np
+        
+        dJ_model = lambda_list[k, 0] * theta_8 * dt
+        
+        grad[j] = dJ_rate_du + dJ_model
+    
+    return grad
+
+
+# =============================================================================
+# 投影梯度下降法 MPC求解器 - Numba优化实现
+# Projected Gradient Descent MPC Solver - Numba Optimized Implementation
+# =============================================================================
+
+@jit(nopython=True, cache=True, fastmath=True)
+def _compute_gradient(T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
+                      theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
+                      c_p, Np, Nc, w_t, w_terminal, w_r, last_control):
+    """
+    计算MPC目标函数关于控制序列的梯度 - 伴随变量法
+    
+    使用伴随变量法进行解析梯度计算
+    相比有限差分法效率更高
+    """
+    return _compute_gradient_adjoint(
+        T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
         theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
         c_p, Np, Nc, w_t, w_terminal, w_r, last_control
     )
-    
-    for i in range(Nc):
-        u_plus = u.copy()
-        u_plus[i] += eps
-        
-        J_plus = _numba_mpc_objective(
-            u_plus, T_h, T_b, T_s, setpoint, dt, T_env, T_cold, v_f, T_filament,
-            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9,
-            c_p, Np, Nc, w_t, w_terminal, w_r, last_control
-        )
-        
-        grad[i] = (J_plus - J0) / eps
-    
-    return grad
 
 
 @jit(nopython=True, cache=True, fastmath=True)
