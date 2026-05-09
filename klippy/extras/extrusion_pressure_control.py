@@ -6,11 +6,9 @@
 # 本文件遵循 GNU GPLv3 许可证分发。
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
-import math
-import time
 import collections
 import logging
-
+import math
 
 ######################################################################
 # PID 控制器

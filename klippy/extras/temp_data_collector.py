@@ -2260,10 +2260,10 @@ class ThermalParameterEstimator:
         )
 
         gcmd.respond_info(
-            f"推荐分析方法:\n"
-            f"  1. 从阶跃响应识别时间常数\n"
-            f"  2. 使用ARX/ARMAX模型估计传递函数\n"
-            f"  3. 应用子空间辨识方法建立多节点模型"
+            "推荐分析方法:\n"
+            "  1. 从阶跃响应识别时间常数\n"
+            "  2. 使用ARX/ARMAX模型估计传递函数\n"
+            "  3. 应用子空间辨识方法建立多节点模型"
         )
 
     def _load_csv(self, filepath):
@@ -2294,13 +2294,13 @@ class ThermalParameterEstimator:
 def load_config(config):
     """
     模块加载入口函数
-    
+
     当配置文件中存在 [temp_data_collector] 配置节时，
     Klippy会自动调用此函数加载模块。
-    
+
     参数：
         config: 配置对象
-        
+
     返回：
         TemperatureDataCollector 实例
     """

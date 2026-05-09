@@ -5,9 +5,10 @@
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
 import logging
-import os
-from .control_mpc import MpcCalibrate, TuningControl, ControlMPC
+
+from .control_mpc import MpcCalibrate, TuningControl
 from .heaters import ControlBangBang
+
 
 class LoggingControlWrapper:
     """
@@ -278,8 +279,6 @@ class TempStepTest(MpcCalibrate):
         """
         import os
         import time
-        
-        # 获取家目录并创建数据路径
         home_dir = os.path.expanduser("~")
         data_dir = os.path.join(home_dir, "printer_data", "data")
         

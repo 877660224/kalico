@@ -1,6 +1,5 @@
 import logging
 import math
-import threading
 import time
 
 import numpy as np
@@ -2155,10 +2154,10 @@ class ControlMPCV2:
         
         # 简单回退控制：当温度误差很大时使用简单比例控制
         if temp_error > 100:
-            logging.debug(f"MPC V2: Large temp error, using full power")
+            logging.debug("MPC V2: Large temp error, using full power")
             return max_power
         elif temp_error < -50:
-            logging.debug(f"MPC V2: Temp overshoot, turning off heater")
+            logging.debug("MPC V2: Temp overshoot, turning off heater")
             return 0.0
         
         # 根据温度误差确定初始猜测值
