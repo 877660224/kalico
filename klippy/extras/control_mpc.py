@@ -524,8 +524,26 @@ def _ekf_step(
 
 @jit(nopython=True, cache=True, fastmath=True)
 def _compute_jacobian_list(
-    T_h_init, T_b_init, T_s_init, u, dt, T_env, T_cold, v_f, T_filament,
-    theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p, Np
+    T_h_init,
+    T_b_init,
+    T_s_init,
+    u,
+    dt,
+    T_env,
+    T_cold,
+    v_f,
+    T_filament,
+    theta_1,
+    theta_2,
+    theta_3,
+    theta_4,
+    theta_5,
+    theta_6,
+    theta_7,
+    theta_8,
+    theta_9,
+    c_p,
+    Np,
 ):
     F_list = np.zeros((Np, 3, 3))
     T_h = T_h_init
@@ -533,13 +551,47 @@ def _compute_jacobian_list(
     T_s = T_s_init
     for k in range(Np):
         F = _ekf_model_jacobian(
-            T_h, T_b, T_s, u[min(k, len(u)-1)], dt, T_env, T_cold, v_f, T_filament,
-            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+            T_h,
+            T_b,
+            T_s,
+            u[min(k, len(u) - 1)],
+            dt,
+            T_env,
+            T_cold,
+            v_f,
+            T_filament,
+            theta_1,
+            theta_2,
+            theta_3,
+            theta_4,
+            theta_5,
+            theta_6,
+            theta_7,
+            theta_8,
+            theta_9,
+            c_p,
         )
         F_list[k] = F
         T_h, T_b, T_s = _numba_model_step(
-            T_h, T_b, T_s, u[min(k, len(u)-1)], dt, T_env, T_cold, v_f, T_filament,
-            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+            T_h,
+            T_b,
+            T_s,
+            u[min(k, len(u) - 1)],
+            dt,
+            T_env,
+            T_cold,
+            v_f,
+            T_filament,
+            theta_1,
+            theta_2,
+            theta_3,
+            theta_4,
+            theta_5,
+            theta_6,
+            theta_7,
+            theta_8,
+            theta_9,
+            c_p,
         )
     return F_list
 
@@ -551,24 +603,64 @@ def _adjoint_backward_pass(T_s_pred, setpoint, F_list, Np, w_t, w_terminal):
     lambda_list[Np, 2] = 2.0 * (w_t + w_terminal) * error_Np
     for k in range(Np - 1, -1, -1):
         F_k = F_list[k]
-        lambda_next = np.array([lambda_list[k + 1, 0], lambda_list[k + 1, 1], lambda_list[k + 1, 2]])
+        lambda_next = np.array(
+            [
+                lambda_list[k + 1, 0],
+                lambda_list[k + 1, 1],
+                lambda_list[k + 1, 2],
+            ]
+        )
         dJ_dx = np.zeros(3)
         error = T_s_pred[k + 1] - setpoint
         dJ_dx[2] = 2.0 * w_t * error
-        lambda_curr = np.array([
-            F_k[0, 0] * lambda_next[0] + F_k[1, 0] * lambda_next[1] + F_k[2, 0] * lambda_next[2] + dJ_dx[0],
-            F_k[0, 1] * lambda_next[0] + F_k[1, 1] * lambda_next[1] + F_k[2, 1] * lambda_next[2] + dJ_dx[1],
-            F_k[0, 2] * lambda_next[0] + F_k[1, 2] * lambda_next[1] + F_k[2, 2] * lambda_next[2] + dJ_dx[2]
-        ])
+        lambda_curr = np.array(
+            [
+                F_k[0, 0] * lambda_next[0]
+                + F_k[1, 0] * lambda_next[1]
+                + F_k[2, 0] * lambda_next[2]
+                + dJ_dx[0],
+                F_k[0, 1] * lambda_next[0]
+                + F_k[1, 1] * lambda_next[1]
+                + F_k[2, 1] * lambda_next[2]
+                + dJ_dx[1],
+                F_k[0, 2] * lambda_next[0]
+                + F_k[1, 2] * lambda_next[1]
+                + F_k[2, 2] * lambda_next[2]
+                + dJ_dx[2],
+            ]
+        )
         lambda_list[k] = lambda_curr
     return lambda_list
 
 
 @jit(nopython=True, cache=True, fastmath=True)
 def _compute_gradient_adjoint(
-    T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
-    theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p,
-    Np, Nc, w_t, w_terminal, w_r, last_control
+    T_h,
+    T_b,
+    T_s,
+    u,
+    setpoint,
+    dt,
+    T_env,
+    T_cold,
+    v_f,
+    T_filament,
+    theta_1,
+    theta_2,
+    theta_3,
+    theta_4,
+    theta_5,
+    theta_6,
+    theta_7,
+    theta_8,
+    theta_9,
+    c_p,
+    Np,
+    Nc,
+    w_t,
+    w_terminal,
+    w_r,
+    last_control,
 ):
     T_h_pred = np.zeros(Np + 1)
     T_b_pred = np.zeros(Np + 1)
@@ -578,17 +670,54 @@ def _compute_gradient_adjoint(
     T_s_pred[0] = T_s
     for k in range(Np):
         T_h, T_b, T_s = _numba_model_step(
-            T_h, T_b, T_s, u[min(k, len(u)-1)], dt, T_env, T_cold, v_f, T_filament,
-            theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p
+            T_h,
+            T_b,
+            T_s,
+            u[min(k, len(u) - 1)],
+            dt,
+            T_env,
+            T_cold,
+            v_f,
+            T_filament,
+            theta_1,
+            theta_2,
+            theta_3,
+            theta_4,
+            theta_5,
+            theta_6,
+            theta_7,
+            theta_8,
+            theta_9,
+            c_p,
         )
         T_h_pred[k + 1] = T_h
         T_b_pred[k + 1] = T_b
         T_s_pred[k + 1] = T_s
     F_list = _compute_jacobian_list(
-        T_h_pred[0], T_b_pred[0], T_s_pred[0], u, dt, T_env, T_cold, v_f, T_filament,
-        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p, Np
+        T_h_pred[0],
+        T_b_pred[0],
+        T_s_pred[0],
+        u,
+        dt,
+        T_env,
+        T_cold,
+        v_f,
+        T_filament,
+        theta_1,
+        theta_2,
+        theta_3,
+        theta_4,
+        theta_5,
+        theta_6,
+        theta_7,
+        theta_8,
+        theta_9,
+        c_p,
+        Np,
     )
-    lambda_list = _adjoint_backward_pass(T_s_pred, setpoint, F_list, Np, w_t, w_terminal)
+    lambda_list = _adjoint_backward_pass(
+        T_s_pred, setpoint, F_list, Np, w_t, w_terminal
+    )
     grad = np.zeros(Nc)
     for j in range(Nc):
         dT_s_dP = np.zeros(Np + 1)
@@ -597,8 +726,16 @@ def _compute_gradient_adjoint(
         dT_b = 0.0
         dT_s = 0.0
         for k in range(Np):
-            dT_h_new = theta_1 * dt * (dT_b - dT_h) + (1.0 - theta_1 * dt) * dT_h + dt * theta_1
-            dT_b_new = theta_2 * dt * dT_h + (1.0 - (theta_3 + theta_5 + theta_6) * dt) * dT_b - theta_3 * dt * dT_s
+            dT_h_new = (
+                theta_1 * dt * (dT_b - dT_h)
+                + (1.0 - theta_1 * dt) * dT_h
+                + dt * theta_1
+            )
+            dT_b_new = (
+                theta_2 * dt * dT_h
+                + (1.0 - (theta_3 + theta_5 + theta_6) * dt) * dT_b
+                - theta_3 * dt * dT_s
+            )
             dT_s_new = theta_4 * dt * dT_b + (1.0 - theta_4 * dt) * dT_s
             if k >= j:
                 dT_h_new += dt * theta_1
@@ -640,9 +777,32 @@ def _compute_gradient(
     last_control,
 ):
     return _compute_gradient_adjoint(
-        T_h, T_b, T_s, u, setpoint, dt, T_env, T_cold, v_f, T_filament,
-        theta_1, theta_2, theta_3, theta_4, theta_5, theta_6, theta_7, theta_8, theta_9, c_p,
-        Np, Nc, w_t, w_terminal, w_r, last_control
+        T_h,
+        T_b,
+        T_s,
+        u,
+        setpoint,
+        dt,
+        T_env,
+        T_cold,
+        v_f,
+        T_filament,
+        theta_1,
+        theta_2,
+        theta_3,
+        theta_4,
+        theta_5,
+        theta_6,
+        theta_7,
+        theta_8,
+        theta_9,
+        c_p,
+        Np,
+        Nc,
+        w_t,
+        w_terminal,
+        w_r,
+        last_control,
     )
 
 
@@ -2296,10 +2456,25 @@ class ControlMPCV2:
         避免在首次控制循环时因 JIT 编译导致控制延迟。
         """
         _numba_model_step(
-            0.0, 0.0, 0.0, 0.0, 0.1, 25.0, 25.0, 0.0, 25.0,
-            5.029312e-02, 2.806417e-01, 1.065468e-02, 1.370236e-01,
-            3.195262e-03, 2.327857e-02, 2.571527e-11, 8.000314e-02,
-            4.458e-01, 0.00259
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.1,
+            25.0,
+            25.0,
+            0.0,
+            25.0,
+            5.029312e-02,
+            2.806417e-01,
+            1.065468e-02,
+            1.370236e-01,
+            3.195262e-03,
+            2.327857e-02,
+            2.571527e-11,
+            8.000314e-02,
+            4.458e-01,
+            0.00259,
         )
 
     def is_valid_v2(self):
