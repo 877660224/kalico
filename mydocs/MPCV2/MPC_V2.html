@@ -1,0 +1,4708 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://docs.kalico.gg/mydocs/MPCV2/MPC_V2.html">
+      
+      
+        <link rel="prev" href="MPC%20v2%20%E7%AE%97%E6%B3%95%E6%8A%80%E6%9C%AF%E6%96%87%E6%A1%A3.html">
+      
+      
+        <link rel="next" href="%E6%8A%95%E5%BD%B1%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%E6%B1%82%E8%A7%A3MPC%E9%97%AE%E9%A2%98.html">
+      
+      
+      <link rel="icon" href="../../logo/kalico-32x32.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.50">
+    
+    
+      
+        <title>MPC V2 模型预测控制算法使用文档 - Kalico Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a40c8224.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../_kalico/css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+  
+
+
+  
+  
+
+<script id="__analytics">function __md_analytics(){function e(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],e("js",new Date),e("config","G-3YZJ9658GV"),document.addEventListener("DOMContentLoaded",(function(){document.forms.search&&document.forms.search.query.addEventListener("blur",(function(){this.value&&e("event","search",{search_term:this.value})}));document$.subscribe((function(){var t=document.forms.feedback;if(void 0!==t)for(var a of t.querySelectorAll("[type=submit]"))a.addEventListener("click",(function(a){a.preventDefault();var n=document.location.pathname,d=this.getAttribute("data-md-value");e("event","feedback",{page:n,data:d}),t.firstElementChild.disabled=!0;var r=t.querySelector(".md-feedback__note [data-md-value='"+d+"']");r&&(r.hidden=!1)})),t.hidden=!1})),location$.subscribe((function(t){e("config","G-3YZJ9658GV",{page_path:t.pathname})}))}));var t=document.createElement("script");t.async=!0,t.src="https://www.googletagmanager.com/gtag/js?id=G-3YZJ9658GV",document.getElementById("__analytics").insertAdjacentElement("afterEnd",t)}</script>
+  
+    <script>"undefined"!=typeof __md_analytics&&__md_analytics()</script>
+  
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="deep-orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mpc-v2" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../index.html" title="Kalico Documentation" class="md-header__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
+      
+  <img src="../../logo/kalico-96x96.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Kalico Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              MPC V2 模型预测控制算法使用文档
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.5 2c-1.79 1.15-3 3.18-3 5.5s1.21 4.35 3.03 5.5C4.46 13 2 10.54 2 7.5A5.5 5.5 0 0 1 7.5 2m11.57 1.5 1.43 1.43L4.93 20.5 3.5 19.07zm-6.18 2.43L11.41 5 9.97 6l.42-1.7L9 3.24l1.75-.12.58-1.65L12 3.1l1.73.03-1.35 1.13zm-3.3 3.61-1.16-.73-1.12.78.34-1.32-1.09-.83 1.36-.09.45-1.29.51 1.27 1.36.03-1.05.87zM19 13.5a5.5 5.5 0 0 1-5.5 5.5c-1.22 0-2.35-.4-3.26-1.07l7.69-7.69c.67.91 1.07 2.04 1.07 3.26m-4.4 6.58 2.77-1.15-.24 3.35zm4.33-2.7 1.15-2.77 2.2 2.54zm1.15-4.96-1.14-2.78 3.34.24zM9.63 18.93l2.77 1.15-2.53 2.19z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="yellow"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.5 2c-1.79 1.15-3 3.18-3 5.5s1.21 4.35 3.03 5.5C4.46 13 2 10.54 2 7.5A5.5 5.5 0 0 1 7.5 2m11.57 1.5 1.43 1.43L4.93 20.5 3.5 19.07zm-6.18 2.43L11.41 5 9.97 6l.42-1.7L9 3.24l1.75-.12.58-1.65L12 3.1l1.73.03-1.35 1.13zm-3.3 3.61-1.16-.73-1.12.78.34-1.32-1.09-.83 1.36-.09.45-1.29.51 1.27 1.36.03-1.05.87zM19 13.5a5.5 5.5 0 0 1-5.5 5.5c-1.22 0-2.35-.4-3.26-1.07l7.69-7.69c.67.91 1.07 2.04 1.07 3.26m-4.4 6.58 2.77-1.15-.24 3.35zm4.33-2.7 1.15-2.77 2.2 2.54zm1.15-4.96-1.14-2.78 3.34.24zM9.63 18.93l2.77 1.15-2.53 2.19z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/KalicoCrew/kalico/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    KalicoCrew/kalico
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../index.html" title="Kalico Documentation" class="md-nav__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
+      
+  <img src="../../logo/kalico-96x96.png" alt="logo">
+
+    </a>
+    Kalico Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/KalicoCrew/kalico/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    KalicoCrew/kalico
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Overview.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Features.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FAQ.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Frequently Asked Questions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/KalicoCrew/kalico/releases" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Releases
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Config_Changes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration Changes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Configuration
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Config_Reference.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Kalico_Additions.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kalico additions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Bleeding Edge
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_3">
+            <span class="md-nav__icon md-icon"></span>
+            Bleeding Edge
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Bleeding_Edge.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bleeding Edge Features Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Config_Reference_Bleeding_Edge.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration reference for Bleeding Edge features
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Nonlinear_Pressure_Advance.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Nonlinear Pressure Advance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PID.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PID
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MPC.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Predictive Control
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Dockable_Probe.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dockable Probe
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    G-Code Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            G-Code Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../G-Codes.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    G-Codes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Command_Templates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Commands templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../G-Code_Shell_Command.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    G-Code Shell Command Extension
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Status_Reference.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Status reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting up and running
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Getting up and running
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Migrating_from_Klipper.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Migrating from Klipper
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Installation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OctoPrint.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using OctoPrint
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TMC_Drivers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TMC drivers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Config_checks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration checks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Rotation_Distance.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rotation distance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Multi_MCU_Homing.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multiple Micro-controller Homing and Probing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_8" id="__nav_9_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Bed leveling, Probes and Endstops
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_8">
+            <span class="md-nav__icon md-icon"></span>
+            Bed leveling, Probes and Endstops
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Z_Calibration.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Automatic Z-Offset Calibration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Bed_Level.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bed leveling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Delta_Calibrate.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Delta calibration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Probe_Calibrate.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Probe calibration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BLTouch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BL-Touch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Manual_Level.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Manual leveling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Bed_Mesh.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bed Mesh
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Endstop_Phase.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Endstop phase
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Axis_Twist_Compensation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Axis Twist Compensation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Skew_Correction.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Skew correction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9_9" id="__nav_9_9_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tuning
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_9_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9_9">
+            <span class="md-nav__icon md-icon"></span>
+            Tuning
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Measuring_Resonances.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Measuring Resonances
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Resonance_Compensation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resonance Compensation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Pressure_Advance.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pressure advance
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Slicers
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Slicers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Slicers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Slicers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Exclude_Object.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Exclude Objects
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Using_PWM_Tools.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using PWM tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Documentation
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Code_Overview.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Kinematics.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kinematics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Protocol.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Protocol
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API_Server.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API server
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MCU_Commands.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MCU commands
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CANBUS_protocol.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CANBUS protocol
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Debugging.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Debugging
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Benchmarks.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Benchmarks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing to Kalico
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Packaging.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Packaging Kalico
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Device Specific Documents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Device Specific Documents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Example_Configs.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Example configurations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SDCard_Updates.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    SDCard updates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RPi_microcontroller.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RPi microcontroller
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Beaglebone.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Beaglebone
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Bootloaders.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootloaders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Bootloader_Entry.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Bootloader Entry
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CANBUS.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CANBUS
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CANBUS_Troubleshooting.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CANBUS Troubleshooting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../TSL1401CL_Filament_Width_Sensor.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TSL1401CL filament width sensor
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Hall_Filament_Width_Sensor.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hall filament width sensor
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Load_Cell.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Load Cells
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Telemetry.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kalico Telemetry
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Contact.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contact
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Sponsors.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sponsors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    我的文档
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            我的文档
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AGENTS.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AGENTS.md
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_16_2" id="__nav_16_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    MPCV2
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_16_2">
+            <span class="md-nav__icon md-icon"></span>
+            MPCV2
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="MPC%20v2%20%E7%AE%97%E6%B3%95%E6%8A%80%E6%9C%AF%E6%96%87%E6%A1%A3.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MPC v2 算法技术文档
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    MPC V2 模型预测控制算法使用文档
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="MPC_V2.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    MPC V2 模型预测控制算法使用文档
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      目录
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. 算法基本原理概述
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 算法基本原理概述">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1 什么是模型预测控制（MPC）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-mpc-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2 MPC V2 的核心特点
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.3 三节点热力学模型
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4 数学模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4 数学模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      温度动态方程
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      MPC优化目标函数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.5 MPC控制流程
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. 环境依赖与安装步骤
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境依赖与安装步骤">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 系统要求
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 依赖安装
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 验证安装
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. 初始化配置参数说明
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 初始化配置参数说明">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 基本配置示例
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 参数详细说明
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 参数详细说明">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#321" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.1 必需参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#322-theta" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.2 系统辨识参数（theta参数）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#323" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.3 耗材参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#324" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.4 模型参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#325-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.5 MPC优化参数（代码内部默认值）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 常见耗材材料参数参考
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 核心API接口详解
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 核心API接口详解">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-gcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 GCode命令
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1 GCode命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#411-mpc_set_v2-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1.1 MPC_SET_V2 - 设置MPC参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 状态查询接口
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 状态查询接口">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#421-http-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2.1 通过HTTP API查询
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#422" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2.2 状态字段说明
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3 Python API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 Python API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#431-controlmpcv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3.1 ControlMPCV2 类
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. 典型使用场景示例代码
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 典型使用场景示例代码">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.1 基本配置示例
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.2 多材料切换宏
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.3 打印开始宏集成
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.4 性能监控宏
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.5 高级配置示例（带环境传感器）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. 常见问题解决方案及调试指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 常见问题解决方案及调试指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.1 常见问题
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.1 常见问题">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题1：温度震荡
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题2：温度响应慢
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题3：温度超调
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4numba" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题4：Numba未启用
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2 调试指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.2 调试指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#621" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.1 启用详细日志
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#622" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.2 实时监控
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#623" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.3 性能分析
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3 参数调优建议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.3 参数调优建议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#631-theta" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3.1 Theta参数标定
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#632" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3.2 权重参数调优
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.4 故障排除流程
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.5 性能优化建议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="附录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a" class="md-nav__link">
+    <span class="md-ellipsis">
+      A. 参数快速参考表
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b" class="md-nav__link">
+    <span class="md-ellipsis">
+      B. 版本历史
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c" class="md-nav__link">
+    <span class="md-ellipsis">
+      C. 相关文档
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="%E6%8A%95%E5%BD%B1%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%E6%B1%82%E8%A7%A3MPC%E9%97%AE%E9%A2%98.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    投影梯度下降法求解MPC问题
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E4%B8%B2%E5%8F%A3%E5%8E%8B%E5%8A%9B%E4%BC%A0%E6%84%9F%E5%99%A8.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ALPS USB 串口压力传感器
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E6%B8%A9%E5%BA%A6%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E6%A8%A1%E5%9D%97.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    温度数据采集模块
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ExtrusionPressureControl.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Klipper 挤出压力预读控制系统
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      目录
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. 算法基本原理概述
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 算法基本原理概述">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1 什么是模型预测控制（MPC）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-mpc-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2 MPC V2 的核心特点
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.3 三节点热力学模型
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.4 数学模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.4 数学模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      温度动态方程
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      MPC优化目标函数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.5 MPC控制流程
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. 环境依赖与安装步骤
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境依赖与安装步骤">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 系统要求
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 依赖安装
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 验证安装
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. 初始化配置参数说明
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 初始化配置参数说明">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 基本配置示例
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 参数详细说明
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 参数详细说明">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#321" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.1 必需参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#322-theta" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.2 系统辨识参数（theta参数）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#323" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.3 耗材参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#324" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.4 模型参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#325-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2.5 MPC优化参数（代码内部默认值）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 常见耗材材料参数参考
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 核心API接口详解
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 核心API接口详解">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-gcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 GCode命令
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1 GCode命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#411-mpc_set_v2-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1.1 MPC_SET_V2 - 设置MPC参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 状态查询接口
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 状态查询接口">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#421-http-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2.1 通过HTTP API查询
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#422" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2.2 状态字段说明
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3 Python API
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 Python API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#431-controlmpcv2" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.3.1 ControlMPCV2 类
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. 典型使用场景示例代码
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 典型使用场景示例代码">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.1 基本配置示例
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.2 多材料切换宏
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.3 打印开始宏集成
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.4 性能监控宏
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.5 高级配置示例（带环境传感器）
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. 常见问题解决方案及调试指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 常见问题解决方案及调试指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.1 常见问题
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.1 常见问题">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题1：温度震荡
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题2：温度响应慢
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题3：温度超调
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4numba" class="md-nav__link">
+    <span class="md-ellipsis">
+      问题4：Numba未启用
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2 调试指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.2 调试指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#621" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.1 启用详细日志
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#622" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.2 实时监控
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#623" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2.3 性能分析
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3 参数调优建议
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.3 参数调优建议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#631-theta" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3.1 Theta参数标定
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#632" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3.2 权重参数调优
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.4 故障排除流程
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.5 性能优化建议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="附录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a" class="md-nav__link">
+    <span class="md-ellipsis">
+      A. 参数快速参考表
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b" class="md-nav__link">
+    <span class="md-ellipsis">
+      B. 版本历史
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c" class="md-nav__link">
+    <span class="md-ellipsis">
+      C. 相关文档
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/KalicoCrew/kalico/edit/main/docs/mydocs/MPCV2/MPC_V2.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="mpc-v2">MPC V2 模型预测控制算法使用文档<a class="headerlink" href="#mpc-v2" title="Permanent link">&para;</a></h1>
+<h2 id="_1">目录<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#1">算法基本原理概述</a></li>
+<li><a href="#2">环境依赖与安装步骤</a></li>
+<li><a href="#3">初始化配置参数说明</a></li>
+<li><a href="#4-api">核心API接口详解</a></li>
+<li><a href="#5">典型使用场景示例代码</a></li>
+<li><a href="#6">常见问题解决方案及调试指南</a></li>
+</ol>
+<hr />
+<h2 id="1">1. 算法基本原理概述<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="11-mpc">1.1 什么是模型预测控制（MPC）<a class="headerlink" href="#11-mpc" title="Permanent link">&para;</a></h3>
+<p>模型预测控制（Model Predictive Control，MPC）是一种先进的温度控制方法，与传统PID控制相比具有显著优势。MPC利用系统模型来预测加热头的温度变化，并主动调整加热功率以实现精确的温度控制。</p>
+<h3 id="12-mpc-v2">1.2 MPC V2 的核心特点<a class="headerlink" href="#12-mpc-v2" title="Permanent link">&para;</a></h3>
+<p>MPC V2 是基于<strong>三节点热力学模型</strong>的改进版本，相比原版MPC具有以下特点：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>三节点模型</strong></td>
+<td>加热器(Heater)、加热块(Block)、传感器(Sensor)三个热节点</td>
+</tr>
+<tr>
+<td><strong>等效参数</strong></td>
+<td>使用系统辨识得到的等效参数(theta_1 ~ theta_9)</td>
+</tr>
+<tr>
+<td><strong>预测优化</strong></td>
+<td>基于预测时域和控制时域的滚动优化</td>
+</tr>
+<tr>
+<td><strong>Numba加速</strong></td>
+<td>可选的Numba JIT编译加速，显著提升计算性能</td>
+</tr>
+<tr>
+<td><strong>实时监控</strong></td>
+<td>完整的时间统计和性能监控</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13">1.3 三节点热力学模型<a class="headerlink" href="#13" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────┐
+│                        三节点热力学模型                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│    ┌──────────┐    θ₂·(T_h-T_b)    ┌──────────┐    θ₃·(T_b-T_s)    ┌──────────┐
+│    │  加热器   │ ─────────────────▶ │  加热块   │ ─────────────────▶ │  传感器   │
+│    │   T_h    │                     │   T_b    │                     │   T_s    │
+│    └──────────┘                     └──────────┘                     └──────────┘
+│         │                                │                                │
+│         │ θ₁·(T_h-T_b)                   │                                │
+│         │                                │                                │
+│         ▼                                ▼                                │
+│    ┌──────────┐                    ┌──────────┐                         │
+│    │  热回流   │                    │  热损耗   │                         │
+│    └──────────┘                    └──────────┘                         │
+│                                          │                             │
+│                    ┌─────────────────────┼─────────────────────┐       │
+│                    │                     │                     │       │
+│                    ▼                     ▼                     ▼       │
+│              ┌──────────┐         ┌──────────┐         ┌──────────┐   │
+│              │ 对流损耗  │         │ 传导损耗  │         │ 辐射损耗  │   │
+│              │ θ₅·(T_b-T_env)│     │ θ₆·(T_b-T_cold)│   │ θ₇·(T_b⁴-T_env⁴)│ │
+│              └──────────┘         └──────────┘         └──────────┘   │
+│                                                                 │
+│    功率输入: P × θ₈                                              │
+│    挤出损耗: v_f × c_p × θ₉ × (T_b - T_filament)                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="14">1.4 数学模型<a class="headerlink" href="#14" title="Permanent link">&para;</a></h3>
+<h4 id="_2">温度动态方程<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
+<p><strong>加热器温度变化率：</strong></p>
+<div class="highlight"><pre><span></span><code>dT_h/dt = θ₈ × P - θ₁ × (T_h - T_b)
+</code></pre></div>
+
+<p><strong>加热块温度变化率：</strong></p>
+<div class="highlight"><pre><span></span><code>dT_b/dt = q_hb - q_bs - P_conv - P_cond - P_rad - P_extrusion
+
+其中：
+  q_hb = θ₂ × (T_h - T_b)           # 加热器到加热块的热传递
+  q_bs = θ₃ × (T_b - T_s)           # 加热块到传感器的热传递
+  P_conv = θ₅ × (T_b - T_env)       # 对流损耗
+  P_cond = θ₆ × (T_b - T_cold)      # 传导损耗（到冷端）
+  P_rad = θ₇ × (T_b⁴ - T_env⁴)      # 辐射损耗（斯特藩-玻尔兹曼定律）
+  P_extrusion = v_f × c_p × θ₉ × (T_b - T_filament)  # 挤出损耗
+</code></pre></div>
+
+<p><strong>传感器温度变化率：</strong></p>
+<div class="highlight"><pre><span></span><code>dT_s/dt = θ₄ × (T_b - T_s)
+</code></pre></div>
+
+<h4 id="mpc">MPC优化目标函数<a class="headerlink" href="#mpc" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>J = w_t × Σ(T_s - T_target)² + w_c × Σu² + w_r × Σ(Δu)²
+
+其中：
+  w_t : 跟踪误差权重
+  w_c : 控制量权重
+  w_r : 控制变化率权重
+  u   : 控制量（功率）
+</code></pre></div>
+
+<h3 id="15-mpc">1.5 MPC控制流程<a class="headerlink" href="#15-mpc" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        MPC控制周期流程                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────┐                                                    │
+│  │ 1. 获取状态  │ ← 读取传感器温度、挤出速率、环境温度等               │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 2. 模型预测  │ ← 使用上一步功率预测当前温度                        │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 3. 状态校正  │ ← 使用实际测量值校正模型状态                        │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐           │
+│  │ 4. 轨迹预测  │ ──▶ │ 5. 目标计算  │ ──▶ │ 6. 优化求解  │           │
+│  └─────────────┘     └─────────────┘     └──────┬──────┘           │
+│                                                   │                  │
+│                                                   ▼                  │
+│                                            ┌─────────────┐           │
+│                                            │ 7. 输出控制  │           │
+│                                            └─────────────┘           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<hr />
+<h2 id="2">2. 环境依赖与安装步骤<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="21">2.1 系统要求<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python版本</td>
+<td>Python 3.7+</td>
+</tr>
+<tr>
+<td>NumPy</td>
+<td>必需</td>
+</tr>
+<tr>
+<td>SciPy</td>
+<td>必需（优化求解）</td>
+</tr>
+<tr>
+<td>Numba</td>
+<td>可选（性能加速）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22">2.2 依赖安装<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 基本依赖</span>
+pip<span class="w"> </span>install<span class="w"> </span>numpy<span class="w"> </span>scipy
+
+<span class="c1"># 可选：Numba加速（推荐）</span>
+pip<span class="w"> </span>install<span class="w"> </span>numba
+</code></pre></div>
+
+<h3 id="23">2.3 验证安装<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 在Kalico环境中验证</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;import numpy; import scipy; print(&#39;基本依赖OK&#39;)&quot;</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;import numba; print(&#39;Numba加速可用&#39;)&quot;</span> <span class="mi">2</span><span class="o">&gt;/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="o">||</span> <span class="n">echo</span> <span class="s2">&quot;Numba未安装，将使用纯Python版本&quot;</span>
+</code></pre></div>
+
+<hr />
+<h2 id="3">3. 初始化配置参数说明<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="31">3.1 基本配置示例<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">[extruder]</span>
+<span class="c1"># 控制算法选择</span>
+<span class="na">control</span><span class="o">:</span><span class="w"> </span><span class="s">mpc_v2</span>
+
+<span class="c1"># 加热器功率（必需）</span>
+<span class="na">heater_power</span><span class="o">:</span><span class="w"> </span><span class="s">40</span>
+
+<span class="c1"># 系统辨识参数（使用默认值或自行标定）</span>
+<span class="na">theta_1</span><span class="o">:</span><span class="w"> </span><span class="s">0.05029312</span>
+<span class="na">theta_2</span><span class="o">:</span><span class="w"> </span><span class="s">0.2806417</span>
+<span class="na">theta_3</span><span class="o">:</span><span class="w"> </span><span class="s">0.01065468</span>
+<span class="na">theta_4</span><span class="o">:</span><span class="w"> </span><span class="s">0.1370236</span>
+<span class="na">theta_5</span><span class="o">:</span><span class="w"> </span><span class="s">0.003195262</span>
+<span class="na">theta_6</span><span class="o">:</span><span class="w"> </span><span class="s">0.02327857</span>
+<span class="na">theta_7</span><span class="o">:</span><span class="w"> </span><span class="s">0.00000000002571527</span>
+<span class="na">theta_8</span><span class="o">:</span><span class="w"> </span><span class="s">0.08000314</span>
+
+<span class="c1"># 耗材参数</span>
+<span class="na">filament_diameter</span><span class="o">:</span><span class="w"> </span><span class="s">1.75</span>
+<span class="na">filament_density</span><span class="o">:</span><span class="w"> </span><span class="s">1.20</span>
+<span class="na">filament_heat_capacity</span><span class="o">:</span><span class="w"> </span><span class="s">1.8</span>
+
+<span class="c1"># 可选：环境温度传感器</span>
+<span class="c1"># ambient_temp_sensor: temperature_sensor my_sensor</span>
+
+<span class="c1"># 可选：冷端温度传感器</span>
+<span class="c1"># cold_temp_sensor: temperature_sensor cold_sensor</span>
+
+<span class="c1"># 可选：冷却风扇</span>
+<span class="c1"># cooling_fan: fan</span>
+</code></pre></div>
+
+<h3 id="32">3.2 参数详细说明<a class="headerlink" href="#32" title="Permanent link">&para;</a></h3>
+<h4 id="321">3.2.1 必需参数<a class="headerlink" href="#321" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>control</code></td>
+<td>string</td>
+<td>控制算法类型，设为 <code>mpc_v2</code></td>
+</tr>
+<tr>
+<td><code>heater_power</code></td>
+<td>float</td>
+<td>加热器标称功率（瓦特）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="322-theta">3.2.2 系统辨识参数（theta参数）<a class="headerlink" href="#322-theta" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>物理意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>theta_1</code></td>
+<td>5.029312e-02</td>
+<td>加热器到加热块的热传递系数</td>
+</tr>
+<tr>
+<td><code>theta_2</code></td>
+<td>2.806417e-01</td>
+<td>加热器到加热块的热流系数</td>
+</tr>
+<tr>
+<td><code>theta_3</code></td>
+<td>1.065468e-02</td>
+<td>加热块到传感器的热传递系数</td>
+</tr>
+<tr>
+<td><code>theta_4</code></td>
+<td>1.370236e-01</td>
+<td>传感器响应系数</td>
+</tr>
+<tr>
+<td><code>theta_5</code></td>
+<td>3.195262e-03</td>
+<td>对流损耗系数</td>
+</tr>
+<tr>
+<td><code>theta_6</code></td>
+<td>2.327857e-02</td>
+<td>传导损耗系数</td>
+</tr>
+<tr>
+<td><code>theta_7</code></td>
+<td>2.571527e-11</td>
+<td>辐射损耗系数（斯特藩-玻尔兹曼相关）</td>
+</tr>
+<tr>
+<td><code>theta_8</code></td>
+<td>8.000314e-02</td>
+<td>功率转换系数</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>注意</strong>: <code>theta_9</code> 由系统自动计算：<code>theta_9 = theta_8 × theta_2 / theta_1</code></p>
+</blockquote>
+<h4 id="323">3.2.3 耗材参数<a class="headerlink" href="#323" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>filament_diameter</code></td>
+<td>1.75</td>
+<td>耗材直径（mm）</td>
+</tr>
+<tr>
+<td><code>filament_density</code></td>
+<td>1.20</td>
+<td>耗材密度（g/cm³）</td>
+</tr>
+<tr>
+<td><code>filament_heat_capacity</code></td>
+<td>1.8</td>
+<td>耗材比热容（J/g/K）</td>
+</tr>
+<tr>
+<td><code>filament_temperature_source</code></td>
+<td>"ambient"</td>
+<td>耗材温度来源</td>
+</tr>
+</tbody>
+</table>
+<p><strong>耗材温度来源选项：</strong></p>
+<ul>
+<li><code>ambient</code>: 使用环境温度（默认）</li>
+<li><code>sensor</code>: 使用指定传感器温度</li>
+<li>数值: 使用固定温度值</li>
+</ul>
+<h4 id="324">3.2.4 模型参数<a class="headerlink" href="#324" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smoothing</code></td>
+<td>0.83</td>
+<td>状态校正平滑系数（秒）</td>
+</tr>
+<tr>
+<td><code>min_ambient_change</code></td>
+<td>1.0</td>
+<td>最小环境温度变化率（°C/s）</td>
+</tr>
+<tr>
+<td><code>steady_state_rate</code></td>
+<td>0.5</td>
+<td>稳态判定变化率（°C/s）</td>
+</tr>
+<tr>
+<td><code>maximum_retract</code></td>
+<td>2.0</td>
+<td>最大回抽量（mm）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="325-mpc">3.2.5 MPC优化参数（代码内部默认值）<a class="headerlink" href="#325-mpc" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prediction_horizon</code></td>
+<td>30</td>
+<td>预测时域（步数）</td>
+</tr>
+<tr>
+<td><code>control_horizon</code></td>
+<td>10</td>
+<td>控制时域（步数）</td>
+</tr>
+<tr>
+<td><code>weight_tracking</code></td>
+<td>10.0</td>
+<td>跟踪误差权重</td>
+</tr>
+<tr>
+<td><code>weight_control</code></td>
+<td>0.001</td>
+<td>控制量权重</td>
+</tr>
+<tr>
+<td><code>weight_rate</code></td>
+<td>0.1</td>
+<td>控制变化率权重</td>
+</tr>
+<tr>
+<td><code>max_iterations</code></td>
+<td>200</td>
+<td>最大优化迭代次数</td>
+</tr>
+<tr>
+<td><code>tolerance</code></td>
+<td>1e-5</td>
+<td>优化收敛容差</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33">3.3 常见耗材材料参数参考<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>材料</th>
+<th>密度 (g/cm³)</th>
+<th>比热容 (J/g/K)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PLA</td>
+<td>1.25</td>
+<td>1.8 - 2.2</td>
+</tr>
+<tr>
+<td>PETG</td>
+<td>1.27</td>
+<td>1.7 - 2.2</td>
+</tr>
+<tr>
+<td>ABS</td>
+<td>1.06</td>
+<td>1.25 - 2.4</td>
+</tr>
+<tr>
+<td>ASA</td>
+<td>1.07</td>
+<td>1.3 - 2.1</td>
+</tr>
+<tr>
+<td>PA (尼龙)</td>
+<td>1.15</td>
+<td>2.0 - 2.5</td>
+</tr>
+<tr>
+<td>PC</td>
+<td>1.20</td>
+<td>1.1 - 1.9</td>
+</tr>
+<tr>
+<td>TPU</td>
+<td>1.21</td>
+<td>1.5 - 2.0</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-api">4. 核心API接口详解<a class="headerlink" href="#4-api" title="Permanent link">&para;</a></h2>
+<h3 id="41-gcode">4.1 GCode命令<a class="headerlink" href="#41-gcode" title="Permanent link">&para;</a></h3>
+<h4 id="411-mpc_set_v2-mpc">4.1.1 MPC_SET_V2 - 设置MPC参数<a class="headerlink" href="#411-mpc_set_v2-mpc" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>MPC_SET_V2 [参数名=值] ...
+</code></pre></div>
+
+<p><strong>可用参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FILAMENT_DIAMETER</code></td>
+<td>耗材直径（mm）</td>
+</tr>
+<tr>
+<td><code>FILAMENT_DENSITY</code></td>
+<td>耗材密度（g/cm³）</td>
+</tr>
+<tr>
+<td><code>FILAMENT_HEAT_CAPACITY</code></td>
+<td>耗材比热容（J/g/K）</td>
+</tr>
+<tr>
+<td><code>THETA_1</code> ~ <code>THETA_8</code></td>
+<td>系统辨识参数</td>
+</tr>
+<tr>
+<td><code>FILAMENT_TEMP</code></td>
+<td>耗材温度来源（"sensor"/"ambient"/数值）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>示例：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c">; 设置ASA耗材参数</span>
+MPC_SET_V2 FILAMENT_DENSITY=1.07 FILAMENT_HEAT_CAPACITY=1.7
+
+<span class="c">; 设置耗材温度来源为传感器</span>
+MPC_SET_V2 FILAMENT_TEMP=sensor
+
+<span class="c">; 设置耗材温度为固定值</span>
+MPC_SET_V2 FILAMENT_TEMP=25
+</code></pre></div>
+
+<h3 id="42">4.2 状态查询接口<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<h4 id="421-http-api">4.2.1 通过HTTP API查询<a class="headerlink" href="#421-http-api" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code>http://&lt;打印机IP&gt;:7125/printer/objects/query?extruder
+</code></pre></div>
+
+<p><strong>返回的状态信息：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;temp_heater&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">220.5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temp_block&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">219.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temp_sensor&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">220.0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temp_ambient&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">25.3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;temp_cold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">28.1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;power&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">15.2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_ambient&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_filament&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.15</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_cold&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.45</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loss_radiation&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.08</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;theta_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05029312</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;theta_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.2806417</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prediction_horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;control_horizon&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_model_step&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_predict&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_optimize&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_max&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timing_avg&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;numba_enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="422">4.2.2 状态字段说明<a class="headerlink" href="#422" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>temp_heater</code></td>
+<td>模型估计的加热器温度（°C）</td>
+</tr>
+<tr>
+<td><code>temp_block</code></td>
+<td>模型估计的加热块温度（°C）</td>
+</tr>
+<tr>
+<td><code>temp_sensor</code></td>
+<td>模型估计的传感器温度（°C）</td>
+</tr>
+<tr>
+<td><code>temp_ambient</code></td>
+<td>估计的环境温度（°C）</td>
+</tr>
+<tr>
+<td><code>temp_cold</code></td>
+<td>冷端温度（°C）</td>
+</tr>
+<tr>
+<td><code>power</code></td>
+<td>当前输出功率（W）</td>
+</tr>
+<tr>
+<td><code>loss_ambient</code></td>
+<td>对流损耗（W）</td>
+</tr>
+<tr>
+<td><code>loss_filament</code></td>
+<td>挤出损耗（W）</td>
+</tr>
+<tr>
+<td><code>loss_cold</code></td>
+<td>传导损耗（W）</td>
+</tr>
+<tr>
+<td><code>loss_radiation</code></td>
+<td>辐射损耗（W）</td>
+</tr>
+<tr>
+<td><code>timing_model_step</code></td>
+<td>单步模型预测时间（ms）</td>
+</tr>
+<tr>
+<td><code>timing_predict</code></td>
+<td>轨迹预测时间（ms）</td>
+</tr>
+<tr>
+<td><code>timing_optimize</code></td>
+<td>优化求解时间（ms）</td>
+</tr>
+<tr>
+<td><code>timing_total</code></td>
+<td>总控制周期时间（ms）</td>
+</tr>
+<tr>
+<td><code>timing_max</code></td>
+<td>最大周期时间（ms）</td>
+</tr>
+<tr>
+<td><code>timing_avg</code></td>
+<td>平均周期时间（ms）</td>
+</tr>
+<tr>
+<td><code>numba_enabled</code></td>
+<td>Numba加速是否启用</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-python-api">4.3 Python API<a class="headerlink" href="#43-python-api" title="Permanent link">&para;</a></h3>
+<h4 id="431-controlmpcv2">4.3.1 ControlMPCV2 类<a class="headerlink" href="#431-controlmpcv2" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">ControlMPCV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MPC V2控制器类&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">temperature_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">read_time</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">target_temp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        温度更新主循环</span>
+
+<span class="sd">        参数:</span>
+<span class="sd">            read_time: 当前时间 (s)</span>
+<span class="sd">            temp: 当前测量温度 (°C)</span>
+<span class="sd">            target_temp: 目标温度 (°C)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eventtime</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        获取控制器状态</span>
+
+<span class="sd">        返回:</span>
+<span class="sd">            dict: 状态信息字典</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_model_step_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T_h</span><span class="p">,</span> <span class="n">T_b</span><span class="p">,</span> <span class="n">T_s</span><span class="p">,</span> <span class="n">power</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T_env</span><span class="p">,</span> <span class="n">T_cold</span><span class="p">,</span> <span class="n">v_f</span><span class="p">,</span> <span class="n">T_filament</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        单步模型仿真</span>
+
+<span class="sd">        返回:</span>
+<span class="sd">            (T_h_new, T_b_new, T_s_new): 更新后的温度元组</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_predict_trajectory_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">power_sequence</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        多步轨迹预测</span>
+
+<span class="sd">        返回:</span>
+<span class="sd">            (T_h_arr, T_b_arr, T_s_arr): 温度轨迹数组</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_solve_mpc_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">,</span> <span class="n">setpoint</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        MPC优化求解</span>
+
+<span class="sd">        返回:</span>
+<span class="sd">            float: 最优控制量（功率 W）</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</code></pre></div>
+
+<hr />
+<h2 id="5">5. 典型使用场景示例代码<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="51">5.1 基本配置示例<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># printer.cfg</span>
+
+<span class="k">[extruder]</span>
+<span class="na">step_pin</span><span class="o">:</span><span class="w"> </span><span class="s">PF0</span>
+<span class="na">dir_pin</span><span class="o">:</span><span class="w"> </span><span class="s">PF1</span>
+<span class="na">...</span>
+<span class="c1"># MPC V2 控制配置</span>
+<span class="na">control</span><span class="o">:</span><span class="w"> </span><span class="s">mpc_v2</span>
+<span class="na">heater_power</span><span class="o">:</span><span class="w"> </span><span class="s">40</span>
+
+<span class="c1"># 使用默认系统辨识参数</span>
+<span class="c1"># 或根据实际测量填写</span>
+
+<span class="c1"># PLA耗材默认参数</span>
+<span class="na">filament_diameter</span><span class="o">:</span><span class="w"> </span><span class="s">1.75</span>
+<span class="na">filament_density</span><span class="o">:</span><span class="w"> </span><span class="s">1.25</span>
+<span class="na">filament_heat_capacity</span><span class="o">:</span><span class="w"> </span><span class="s">2.0</span>
+</code></pre></div>
+
+<h3 id="52">5.2 多材料切换宏<a class="headerlink" href="#52" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">[gcode_macro SET_FILAMENT_MPC]</span>
+<span class="na">description</span><span class="o">:</span><span class="w"> </span><span class="s">根据材料类型设置MPC参数</span>
+<span class="na">gcode</span><span class="o">:</span>
+<span class="w">    </span><span class="na">{% set material</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">params.MATERIAL|upper %}</span>
+
+<span class="w">    </span><span class="c1"># PLA</span>
+<span class="w">    </span><span class="na">{% if material =</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;PLA&quot;</span><span class="w"> </span><span class="na">%}</span>
+<span class="w">        </span><span class="na">MPC_SET_V2 FILAMENT_DENSITY</span><span class="o">=</span><span class="s">1.25 FILAMENT_HEAT_CAPACITY=2.0</span>
+
+<span class="w">    </span><span class="c1"># PETG</span>
+<span class="w">    </span><span class="na">{% elif material =</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;PETG&quot;</span><span class="w"> </span><span class="na">%}</span>
+<span class="w">        </span><span class="na">MPC_SET_V2 FILAMENT_DENSITY</span><span class="o">=</span><span class="s">1.27 FILAMENT_HEAT_CAPACITY=2.0</span>
+
+<span class="w">    </span><span class="c1"># ABS</span>
+<span class="w">    </span><span class="na">{% elif material =</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ABS&quot;</span><span class="w"> </span><span class="na">%}</span>
+<span class="w">        </span><span class="na">MPC_SET_V2 FILAMENT_DENSITY</span><span class="o">=</span><span class="s">1.06 FILAMENT_HEAT_CAPACITY=2.0</span>
+
+<span class="w">    </span><span class="c1"># ASA</span>
+<span class="w">    </span><span class="na">{% elif material =</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;ASA&quot;</span><span class="w"> </span><span class="na">%}</span>
+<span class="w">        </span><span class="na">MPC_SET_V2 FILAMENT_DENSITY</span><span class="o">=</span><span class="s">1.07 FILAMENT_HEAT_CAPACITY=1.7</span>
+
+<span class="w">    </span><span class="c1"># TPU</span>
+<span class="w">    </span><span class="na">{% elif material =</span><span class="o">=</span><span class="w"> </span><span class="s">&quot;TPU&quot;</span><span class="w"> </span><span class="na">%}</span>
+<span class="w">        </span><span class="na">MPC_SET_V2 FILAMENT_DENSITY</span><span class="o">=</span><span class="s">1.21 FILAMENT_HEAT_CAPACITY=1.8</span>
+
+<span class="w">    </span><span class="na">{% else %}</span>
+<span class="w">        </span><span class="na">{action_respond_info(&quot;未知材料类型，使用默认参数&quot;)}</span>
+<span class="w">    </span><span class="na">{% endif %}</span>
+</code></pre></div>
+
+<h3 id="53">5.3 打印开始宏集成<a class="headerlink" href="#53" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">[gcode_macro PRINT_START]</span>
+<span class="na">gcode</span><span class="o">:</span>
+<span class="w">    </span><span class="na">{% set bed_temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">params.BED_TEMP|default(60)|float %}</span>
+<span class="w">    </span><span class="na">{% set extruder_temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">params.EXTRUDER_TEMP|default(200)|float %}</span>
+<span class="w">    </span><span class="na">{% set material</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">params.MATERIAL|default(&quot;PLA&quot;) %}</span>
+
+<span class="w">    </span><span class="c1"># 设置MPC耗材参数</span>
+<span class="w">    </span><span class="na">SET_FILAMENT_MPC MATERIAL</span><span class="o">=</span><span class="s">{material}</span>
+
+<span class="w">    </span><span class="c1"># 预热</span>
+<span class="w">    </span><span class="na">M140 S{bed_temp}</span>
+<span class="w">    </span><span class="na">M104 S{extruder_temp}</span>
+
+<span class="w">    </span><span class="c1"># 等待温度</span>
+<span class="w">    </span><span class="na">M190 S{bed_temp}</span>
+<span class="w">    </span><span class="na">M109 S{extruder_temp}</span>
+
+<span class="w">    </span><span class="c1"># 开始打印...</span>
+</code></pre></div>
+
+<h3 id="54">5.4 性能监控宏<a class="headerlink" href="#54" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">[gcode_macro MPC_STATUS]</span>
+<span class="na">description</span><span class="o">:</span><span class="w"> </span><span class="s">显示MPC性能统计</span>
+<span class="na">gcode</span><span class="o">:</span>
+<span class="w">    </span><span class="na">{% set stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">printer.extruder %}</span>
+
+<span class="w">    </span><span class="na">{action_respond_info(&quot;=== MPC V2 状态 ==</span><span class="o">=</span><span class="s">&quot;</span><span class="err">)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;加热器温度</span><span class="o">:</span><span class="w"> </span><span class="s">%.2f°C&quot; % stats.temp_heater)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;加热块温度</span><span class="o">:</span><span class="w"> </span><span class="s">%.2f°C&quot; % stats.temp_block)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;传感器温度</span><span class="o">:</span><span class="w"> </span><span class="s">%.2f°C&quot; % stats.temp_sensor)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;环境温度</span><span class="o">:</span><span class="w"> </span><span class="s">%.2f°C&quot; % stats.temp_ambient)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;输出功率</span><span class="o">:</span><span class="w"> </span><span class="s">%.2f W&quot; % stats.power)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;--- 热损耗 ---&quot;)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;对流损耗</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f W&quot; % stats.loss_ambient)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;传导损耗</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f W&quot; % stats.loss_cold)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;辐射损耗</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f W&quot; % stats.loss_radiation)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;挤出损耗</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f W&quot; % stats.loss_filament)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;--- 性能统计 ---&quot;)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;模型步进</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_model_step)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;轨迹预测</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_predict)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;优化求解</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_optimize)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;总周期</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_total)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;最大周期</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_max)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;平均周期</span><span class="o">:</span><span class="w"> </span><span class="s">%.3f ms&quot; % stats.timing_avg)}</span>
+<span class="w">    </span><span class="na">{action_respond_info(&quot;Numba加速</span><span class="o">:</span><span class="w"> </span><span class="s">%s&quot; % (&quot;启用&quot; if stats.numba_enabled else &quot;未启用&quot;))}</span>
+</code></pre></div>
+
+<h3 id="55">5.5 高级配置示例（带环境传感器）<a class="headerlink" href="#55" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 配置环境温度传感器</span>
+<span class="k">[temperature_sensor chamber]</span>
+<span class="na">sensor_type</span><span class="o">:</span><span class="w"> </span><span class="s">NTC 100K beta 3950</span>
+<span class="na">sensor_pin</span><span class="o">:</span><span class="w"> </span><span class="s">...</span>
+
+<span class="k">[temperature_sensor cold_end]</span>
+<span class="na">sensor_type</span><span class="o">:</span><span class="w"> </span><span class="s">NTC 100K beta 3950</span>
+<span class="na">sensor_pin</span><span class="o">:</span><span class="w"> </span><span class="s">...</span>
+
+<span class="k">[extruder]</span>
+<span class="na">control</span><span class="o">:</span><span class="w"> </span><span class="s">mpc_v2</span>
+<span class="na">heater_power</span><span class="o">:</span><span class="w"> </span><span class="s">50</span>
+
+<span class="c1"># 系统辨识参数（需要实际标定）</span>
+<span class="na">theta_1</span><span class="o">:</span><span class="w"> </span><span class="s">0.048</span>
+<span class="na">theta_2</span><span class="o">:</span><span class="w"> </span><span class="s">0.265</span>
+<span class="na">theta_3</span><span class="o">:</span><span class="w"> </span><span class="s">0.012</span>
+<span class="na">theta_4</span><span class="o">:</span><span class="w"> </span><span class="s">0.145</span>
+<span class="na">theta_5</span><span class="o">:</span><span class="w"> </span><span class="s">0.0035</span>
+<span class="na">theta_6</span><span class="o">:</span><span class="w"> </span><span class="s">0.025</span>
+<span class="na">theta_7</span><span class="o">:</span><span class="w"> </span><span class="s">0.000000000028</span>
+<span class="na">theta_8</span><span class="o">:</span><span class="w"> </span><span class="s">0.085</span>
+
+<span class="c1"># 传感器配置</span>
+<span class="na">ambient_temp_sensor</span><span class="o">:</span><span class="w"> </span><span class="s">temperature_sensor chamber</span>
+<span class="na">cold_temp_sensor</span><span class="o">:</span><span class="w"> </span><span class="s">temperature_sensor cold_end</span>
+
+<span class="c1"># 冷端默认温度</span>
+<span class="na">T_cold</span><span class="o">:</span><span class="w"> </span><span class="s">30</span>
+
+<span class="c1"># 冷却风扇</span>
+<span class="na">cooling_fan</span><span class="o">:</span><span class="w"> </span><span class="s">fan</span>
+</code></pre></div>
+
+<hr />
+<h2 id="6">6. 常见问题解决方案及调试指南<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="61">6.1 常见问题<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<h4 id="1_1">问题1：温度震荡<a class="headerlink" href="#1_1" title="Permanent link">&para;</a></h4>
+<p><strong>症状：</strong> 温度在目标值附近来回波动</p>
+<p><strong>可能原因：</strong></p>
+<ul>
+<li>theta参数不准确</li>
+<li>权重参数设置不当</li>
+</ul>
+<p><strong>解决方案：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 增加控制变化率权重，减少控制量权重</span>
+<span class="c1"># 需要修改代码中的默认值或通过GCode设置</span>
+</code></pre></div>
+
+<h4 id="2_1">问题2：温度响应慢<a class="headerlink" href="#2_1" title="Permanent link">&para;</a></h4>
+<p><strong>症状：</strong> 温度变化缓慢，跟不上目标温度</p>
+<p><strong>可能原因：</strong></p>
+<ul>
+<li>heater_power设置过低</li>
+<li>theta参数偏小</li>
+</ul>
+<p><strong>解决方案：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 确认加热器功率设置正确</span>
+<span class="na">heater_power</span><span class="o">:</span><span class="w"> </span><span class="s">50</span><span class="w">  </span><span class="c1"># 实际测量或查看规格</span>
+
+<span class="c1"># 或调整theta参数</span>
+</code></pre></div>
+
+<h4 id="3_1">问题3：温度超调<a class="headerlink" href="#3_1" title="Permanent link">&para;</a></h4>
+<p><strong>症状：</strong> 加热时温度超过目标值</p>
+<p><strong>可能原因：</strong></p>
+<ul>
+<li>预测时域太短</li>
+<li>跟踪权重过高</li>
+</ul>
+<p><strong>解决方案：</strong></p>
+<ul>
+<li>增加预测时域（需要修改代码）</li>
+<li>降低跟踪权重</li>
+</ul>
+<h4 id="4numba">问题4：Numba未启用<a class="headerlink" href="#4numba" title="Permanent link">&para;</a></h4>
+<p><strong>症状：</strong> <code>numba_enabled: False</code></p>
+<p><strong>解决方案：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 安装Numba</span>
+pip<span class="w"> </span>install<span class="w"> </span>numba
+
+<span class="c1"># 重启Kalico</span>
+</code></pre></div>
+
+<h3 id="62">6.2 调试指南<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<h4 id="621">6.2.1 启用详细日志<a class="headerlink" href="#621" title="Permanent link">&para;</a></h4>
+<p>在 <code>printer.cfg</code> 中添加：</p>
+<div class="highlight"><pre><span></span><code><span class="k">[logger]</span>
+<span class="na">level</span><span class="o">:</span><span class="w"> </span><span class="s">DEBUG</span>
+</code></pre></div>
+
+<h4 id="622">6.2.2 实时监控<a class="headerlink" href="#622" title="Permanent link">&para;</a></h4>
+<p>使用HTTP API实时查看状态：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 查询MPC状态</span>
+curl<span class="w"> </span>http://localhost:7125/printer/objects/query?extruder
+
+<span class="c1"># 持续监控（需要jq工具）</span>
+watch<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="s1">&#39;curl -s http://localhost:7125/printer/objects/query?extruder | jq .&#39;</span>
+</code></pre></div>
+
+<h4 id="623">6.2.3 性能分析<a class="headerlink" href="#623" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c">; 在打印过程中执行</span>
+MPC_STATUS
+
+<span class="c">; 查看输出</span>
+<span class="c">; timing_total 应该 &lt; 10ms</span>
+<span class="c">; timing_optimize 应该 &lt; 5ms</span>
+</code></pre></div>
+
+<h3 id="63">6.3 参数调优建议<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
+<h4 id="631-theta">6.3.1 Theta参数标定<a class="headerlink" href="#631-theta" title="Permanent link">&para;</a></h4>
+<p>Theta参数需要通过系统辨识获得，建议：</p>
+<ol>
+<li>使用原版MPC校准获取初始参数</li>
+<li>通过实验数据拟合优化</li>
+<li>记录不同工况下的参数</li>
+</ol>
+<h4 id="632">6.3.2 权重参数调优<a class="headerlink" href="#632" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>调整建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>温度跟踪慢</td>
+<td>增加 <code>weight_tracking</code></td>
+</tr>
+<tr>
+<td>控制量过大</td>
+<td>增加 <code>weight_control</code></td>
+</tr>
+<tr>
+<td>控制震荡</td>
+<td>增加 <code>weight_rate</code></td>
+</tr>
+<tr>
+<td>响应迟钝</td>
+<td>减少 <code>weight_rate</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="64">6.4 故障排除流程<a class="headerlink" href="#64" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        故障排除流程                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  问题发生                                                           │
+│      │                                                              │
+│      ▼                                                              │
+│  ┌─────────────┐                                                    │
+│  │ 检查配置    │ ← heater_power是否正确？                            │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 检查参数    │ ← theta参数是否已设置？耗材参数是否正确？            │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 检查传感器  │ ← 温度传感器是否正常？环境传感器是否可用？           │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 检查性能    │ ← timing_total是否过高？Numba是否启用？             │
+│  └──────┬──────┘                                                    │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌─────────────┐                                                    │
+│  │ 查看日志    │ ← 是否有错误或警告信息？                            │
+│  └─────────────┘                                                    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="65">6.5 性能优化建议<a class="headerlink" href="#65" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong>启用Numba加速</strong>
+   <code>bash
+   pip install numba</code></p>
+</li>
+<li>
+<p><strong>调整预测时域</strong></p>
+<ul>
+<li>较短的预测时域计算更快，但可能影响控制质量</li>
+<li>默认30步通常足够</li>
+</ul>
+</li>
+<li>
+<p><strong>调整控制时域</strong></p>
+<ul>
+<li>较短的控制时域计算更快</li>
+<li>默认10步是合理的平衡</li>
+</ul>
+</li>
+<li>
+<p><strong>监控计算时间</strong></p>
+<ul>
+<li><code>timing_total</code> 应小于控制周期（通常100ms）</li>
+<li>如果超时，考虑减少预测时域</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2 id="_3">附录<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="a">A. 参数快速参考表<a class="headerlink" href="#a" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>参数类别</th>
+<th>参数名</th>
+<th>默认值</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统</td>
+<td>control</td>
+<td>mpc_v2</td>
+<td>-</td>
+</tr>
+<tr>
+<td>系统</td>
+<td>heater_power</td>
+<td>必需</td>
+<td>W</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_1</td>
+<td>0.0503</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_2</td>
+<td>0.2806</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_3</td>
+<td>0.0107</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_4</td>
+<td>0.1370</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_5</td>
+<td>0.0032</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_6</td>
+<td>0.0233</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_7</td>
+<td>2.57e-11</td>
+<td>-</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>theta_8</td>
+<td>0.0800</td>
+<td>-</td>
+</tr>
+<tr>
+<td>耗材</td>
+<td>filament_diameter</td>
+<td>1.75</td>
+<td>mm</td>
+</tr>
+<tr>
+<td>耗材</td>
+<td>filament_density</td>
+<td>1.20</td>
+<td>g/cm³</td>
+</tr>
+<tr>
+<td>耗材</td>
+<td>filament_heat_capacity</td>
+<td>1.8</td>
+<td>J/g/K</td>
+</tr>
+<tr>
+<td>MPC</td>
+<td>prediction_horizon</td>
+<td>30</td>
+<td>步</td>
+</tr>
+<tr>
+<td>MPC</td>
+<td>control_horizon</td>
+<td>10</td>
+<td>步</td>
+</tr>
+<tr>
+<td>MPC</td>
+<td>weight_tracking</td>
+<td>10.0</td>
+<td>-</td>
+</tr>
+<tr>
+<td>MPC</td>
+<td>weight_control</td>
+<td>0.001</td>
+<td>-</td>
+</tr>
+<tr>
+<td>MPC</td>
+<td>weight_rate</td>
+<td>0.1</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b">B. 版本历史<a class="headerlink" href="#b" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>日期</th>
+<th>变更说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2024</td>
+<td>初始版本，基于三节点热力学模型</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c">C. 相关文档<a class="headerlink" href="#c" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://github.com/KalicoCrew/kalico//blob/main/MPC.md">MPC.md</a> - 原版MPC文档</li>
+<li><a href="https://github.com/KalicoCrew/kalico//blob/main/PID.md">PID.md</a> - PID控制文档</li>
+<li><a href="https://github.com/KalicoCrew/kalico//blob/main/Config_Reference.md">Config_Reference.md</a> - 配置参考</li>
+</ul>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://kalico.gg/discord" target="_blank" rel="noopener" title="Join our Discord server!" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M524.531 69.836a1.5 1.5 0 0 0-.764-.7A485 485 0 0 0 404.081 32.03a1.82 1.82 0 0 0-1.923.91 338 338 0 0 0-14.9 30.6 447.9 447.9 0 0 0-134.426 0 310 310 0 0 0-15.135-30.6 1.89 1.89 0 0 0-1.924-.91 483.7 483.7 0 0 0-119.688 37.107 1.7 1.7 0 0 0-.788.676C39.068 183.651 18.186 294.69 28.43 404.354a2.02 2.02 0 0 0 .765 1.375 487.7 487.7 0 0 0 146.825 74.189 1.9 1.9 0 0 0 2.063-.676A348 348 0 0 0 208.12 430.4a1.86 1.86 0 0 0-1.019-2.588 321 321 0 0 1-45.868-21.853 1.885 1.885 0 0 1-.185-3.126 251 251 0 0 0 9.109-7.137 1.82 1.82 0 0 1 1.9-.256c96.229 43.917 200.41 43.917 295.5 0a1.81 1.81 0 0 1 1.924.233 235 235 0 0 0 9.132 7.16 1.884 1.884 0 0 1-.162 3.126 301.4 301.4 0 0 1-45.89 21.83 1.875 1.875 0 0 0-1 2.611 391 391 0 0 0 30.014 48.815 1.86 1.86 0 0 0 2.063.7A486 486 0 0 0 610.7 405.729a1.88 1.88 0 0 0 .765-1.352c12.264-126.783-20.532-236.912-86.934-334.541M222.491 337.58c-28.972 0-52.844-26.587-52.844-59.239s23.409-59.241 52.844-59.241c29.665 0 53.306 26.82 52.843 59.239 0 32.654-23.41 59.241-52.843 59.241m195.38 0c-28.971 0-52.843-26.587-52.843-59.239s23.409-59.241 52.843-59.241c29.667 0 53.307 26.82 52.844 59.239 0 32.654-23.177 59.241-52.844 59.241"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.top", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.action.edit", "optimize"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.60a45f97.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

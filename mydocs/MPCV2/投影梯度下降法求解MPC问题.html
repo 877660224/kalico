@@ -8,28 +8,28 @@
       
       
       
-        <link rel="canonical" href="https://docs.kalico.gg/API_Server.html">
+        <link rel="canonical" href="https://docs.kalico.gg/mydocs/MPCV2/%E6%8A%95%E5%BD%B1%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%E6%B1%82%E8%A7%A3MPC%E9%97%AE%E9%A2%98.html">
       
       
-        <link rel="prev" href="Protocol.html">
+        <link rel="prev" href="MPC_V2.html">
       
       
-        <link rel="next" href="MCU_Commands.html">
+        <link rel="next" href="../%E4%B8%B2%E5%8F%A3%E5%8E%8B%E5%8A%9B%E4%BC%A0%E6%84%9F%E5%99%A8.html">
       
       
-      <link rel="icon" href="logo/kalico-32x32.png">
+      <link rel="icon" href="../../logo/kalico-32x32.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.50">
     
     
       
-        <title>API server - Kalico Documentation</title>
+        <title>投影梯度下降法求解MPC问题 - Kalico Documentation</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.a40c8224.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.a40c8224.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -48,9 +48,9 @@
       
     
     
-      <link rel="stylesheet" href="_kalico/css/extra.css">
+      <link rel="stylesheet" href="../../_kalico/css/extra.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -86,7 +86,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#api-server" class="md-skip">
+        <a href="#mpc" class="md-skip">
           Skip to content
         </a>
       
@@ -102,9 +102,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="index.html" title="Kalico Documentation" class="md-header__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
+    <a href="../../index.html" title="Kalico Documentation" class="md-header__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
       
-  <img src="logo/kalico-96x96.png" alt="logo">
+  <img src="../../logo/kalico-96x96.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -121,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              API server
+              投影梯度下降法求解MPC问题
             
           </span>
         </div>
@@ -241,9 +241,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="index.html" title="Kalico Documentation" class="md-nav__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
+    <a href="../../index.html" title="Kalico Documentation" class="md-nav__button md-logo" aria-label="Kalico Documentation" data-md-component="logo">
       
-  <img src="logo/kalico-96x96.png" alt="logo">
+  <img src="../../logo/kalico-96x96.png" alt="logo">
 
     </a>
     Kalico Documentation
@@ -270,7 +270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="index.html" class="md-nav__link">
+      <a href="../../index.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -290,7 +290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Overview.html" class="md-nav__link">
+      <a href="../../Overview.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -310,7 +310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Features.html" class="md-nav__link">
+      <a href="../../Features.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -330,7 +330,7 @@
   
   
     <li class="md-nav__item">
-      <a href="FAQ.html" class="md-nav__link">
+      <a href="../../FAQ.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Config_Changes.html" class="md-nav__link">
+      <a href="../../Config_Changes.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -425,7 +425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Config_Reference.html" class="md-nav__link">
+      <a href="../../Config_Reference.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -446,7 +446,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Kalico_Additions.html" class="md-nav__link">
+      <a href="../../Kalico_Additions.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -502,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Bleeding_Edge.html" class="md-nav__link">
+      <a href="../../Bleeding_Edge.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -523,7 +523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Config_Reference_Bleeding_Edge.html" class="md-nav__link">
+      <a href="../../Config_Reference_Bleeding_Edge.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -544,7 +544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Nonlinear_Pressure_Advance.html" class="md-nav__link">
+      <a href="../../Nonlinear_Pressure_Advance.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -573,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="PID.html" class="md-nav__link">
+      <a href="../../PID.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -594,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="MPC.html" class="md-nav__link">
+      <a href="../../MPC.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -615,7 +615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Dockable_Probe.html" class="md-nav__link">
+      <a href="../../Dockable_Probe.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -678,7 +678,7 @@
   
   
     <li class="md-nav__item">
-      <a href="G-Codes.html" class="md-nav__link">
+      <a href="../../G-Codes.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -699,7 +699,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Command_Templates.html" class="md-nav__link">
+      <a href="../../Command_Templates.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -720,7 +720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="G-Code_Shell_Command.html" class="md-nav__link">
+      <a href="../../G-Code_Shell_Command.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -741,7 +741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Status_Reference.html" class="md-nav__link">
+      <a href="../../Status_Reference.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -804,7 +804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Migrating_from_Klipper.html" class="md-nav__link">
+      <a href="../../Migrating_from_Klipper.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -825,7 +825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Installation.html" class="md-nav__link">
+      <a href="../../Installation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -846,7 +846,7 @@
   
   
     <li class="md-nav__item">
-      <a href="OctoPrint.html" class="md-nav__link">
+      <a href="../../OctoPrint.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -867,7 +867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="TMC_Drivers.html" class="md-nav__link">
+      <a href="../../TMC_Drivers.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -888,7 +888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Config_checks.html" class="md-nav__link">
+      <a href="../../Config_checks.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -909,7 +909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Rotation_Distance.html" class="md-nav__link">
+      <a href="../../Rotation_Distance.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -930,7 +930,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Multi_MCU_Homing.html" class="md-nav__link">
+      <a href="../../Multi_MCU_Homing.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -986,7 +986,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Z_Calibration.html" class="md-nav__link">
+      <a href="../../Z_Calibration.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1007,7 +1007,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Bed_Level.html" class="md-nav__link">
+      <a href="../../Bed_Level.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1028,7 +1028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Delta_Calibrate.html" class="md-nav__link">
+      <a href="../../Delta_Calibrate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1049,7 +1049,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Probe_Calibrate.html" class="md-nav__link">
+      <a href="../../Probe_Calibrate.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1070,7 +1070,7 @@
   
   
     <li class="md-nav__item">
-      <a href="BLTouch.html" class="md-nav__link">
+      <a href="../../BLTouch.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1091,7 +1091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Manual_Level.html" class="md-nav__link">
+      <a href="../../Manual_Level.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1112,7 +1112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Bed_Mesh.html" class="md-nav__link">
+      <a href="../../Bed_Mesh.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1133,7 +1133,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Endstop_Phase.html" class="md-nav__link">
+      <a href="../../Endstop_Phase.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1154,7 +1154,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Axis_Twist_Compensation.html" class="md-nav__link">
+      <a href="../../Axis_Twist_Compensation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1175,7 +1175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Skew_Correction.html" class="md-nav__link">
+      <a href="../../Skew_Correction.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1239,7 +1239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Measuring_Resonances.html" class="md-nav__link">
+      <a href="../../Measuring_Resonances.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1260,7 +1260,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Resonance_Compensation.html" class="md-nav__link">
+      <a href="../../Resonance_Compensation.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1281,7 +1281,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Pressure_Advance.html" class="md-nav__link">
+      <a href="../../Pressure_Advance.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1352,7 +1352,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Slicers.html" class="md-nav__link">
+      <a href="../../Slicers.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1373,7 +1373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Exclude_Object.html" class="md-nav__link">
+      <a href="../../Exclude_Object.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1394,7 +1394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Using_PWM_Tools.html" class="md-nav__link">
+      <a href="../../Using_PWM_Tools.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1419,19 +1419,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
         
           
           <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
@@ -1445,7 +1443,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             Developer Documentation
@@ -1459,7 +1457,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Code_Overview.html" class="md-nav__link">
+      <a href="../../Code_Overview.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1480,7 +1478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Kinematics.html" class="md-nav__link">
+      <a href="../../Kinematics.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1501,7 +1499,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Protocol.html" class="md-nav__link">
+      <a href="../../Protocol.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1519,30 +1517,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    API server
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="API_Server.html" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../API_Server.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1551,266 +1529,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#enabling-the-api-socket" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enabling the API socket
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#request-format" class="md-nav__link">
-    <span class="md-ellipsis">
-      Request format
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#api-protocol" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Protocol
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#subscriptions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Subscriptions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#available-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Available "endpoints"
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Available "endpoints"">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#info" class="md-nav__link">
-    <span class="md-ellipsis">
-      info
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#emergency_stop" class="md-nav__link">
-    <span class="md-ellipsis">
-      emergency_stop
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#register_remote_method" class="md-nav__link">
-    <span class="md-ellipsis">
-      register_remote_method
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectslist" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/list
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectsquery" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectssubscribe" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/subscribe
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodehelp" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/help
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodescript" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/script
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcoderestart" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/restart
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodefirmware_restart" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/firmware_restart
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodesubscribe_output" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/subscribe_output
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#motion_reportdump_stepper" class="md-nav__link">
-    <span class="md-ellipsis">
-      motion_report/dump_stepper
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#motion_reportdump_trapq" class="md-nav__link">
-    <span class="md-ellipsis">
-      motion_report/dump_trapq
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#adxl345dump_adxl345" class="md-nav__link">
-    <span class="md-ellipsis">
-      adxl345/dump_adxl345
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#angledump_angle" class="md-nav__link">
-    <span class="md-ellipsis">
-      angle/dump_angle
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#load_celldump_force" class="md-nav__link">
-    <span class="md-ellipsis">
-      load_cell/dump_force
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#load_cell_probedump_taps" class="md-nav__link">
-    <span class="md-ellipsis">
-      load_cell_probe/dump_taps
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumecancel" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/cancel
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumepause" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/pause
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumeresume" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/resume
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query_endstopsstatus" class="md-nav__link">
-    <span class="md-ellipsis">
-      query_endstops/status
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1823,7 +1541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="MCU_Commands.html" class="md-nav__link">
+      <a href="../../MCU_Commands.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1844,7 +1562,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CANBUS_protocol.html" class="md-nav__link">
+      <a href="../../CANBUS_protocol.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1865,7 +1583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Debugging.html" class="md-nav__link">
+      <a href="../../Debugging.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1886,7 +1604,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Benchmarks.html" class="md-nav__link">
+      <a href="../../Benchmarks.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1907,7 +1625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CONTRIBUTING.html" class="md-nav__link">
+      <a href="../../CONTRIBUTING.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1928,7 +1646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Packaging.html" class="md-nav__link">
+      <a href="../../Packaging.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1991,7 +1709,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Example_Configs.html" class="md-nav__link">
+      <a href="../../Example_Configs.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2012,7 +1730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="SDCard_Updates.html" class="md-nav__link">
+      <a href="../../SDCard_Updates.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2033,7 +1751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="RPi_microcontroller.html" class="md-nav__link">
+      <a href="../../RPi_microcontroller.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2054,7 +1772,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Beaglebone.html" class="md-nav__link">
+      <a href="../../Beaglebone.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2075,7 +1793,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Bootloaders.html" class="md-nav__link">
+      <a href="../../Bootloaders.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2096,7 +1814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Bootloader_Entry.html" class="md-nav__link">
+      <a href="../../Bootloader_Entry.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2117,7 +1835,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CANBUS.html" class="md-nav__link">
+      <a href="../../CANBUS.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2138,7 +1856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="CANBUS_Troubleshooting.html" class="md-nav__link">
+      <a href="../../CANBUS_Troubleshooting.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2159,7 +1877,7 @@
   
   
     <li class="md-nav__item">
-      <a href="TSL1401CL_Filament_Width_Sensor.html" class="md-nav__link">
+      <a href="../../TSL1401CL_Filament_Width_Sensor.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2180,7 +1898,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Hall_Filament_Width_Sensor.html" class="md-nav__link">
+      <a href="../../Hall_Filament_Width_Sensor.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2201,7 +1919,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Load_Cell.html" class="md-nav__link">
+      <a href="../../Load_Cell.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2229,7 +1947,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Telemetry.html" class="md-nav__link">
+      <a href="../../Telemetry.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2249,7 +1967,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Contact.html" class="md-nav__link">
+      <a href="../../Contact.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2269,7 +1987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="Sponsors.html" class="md-nav__link">
+      <a href="../../Sponsors.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2286,17 +2004,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
         
           
           <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
@@ -2310,7 +2030,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             我的文档
@@ -2324,7 +2044,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/AGENTS.html" class="md-nav__link">
+      <a href="../AGENTS.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2342,17 +2062,19 @@
                 
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_2" checked>
         
           
           <label class="md-nav__link" for="__nav_16_2" id="__nav_16_2_label" tabindex="0">
@@ -2366,7 +2088,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_16_2">
             <span class="md-nav__icon md-icon"></span>
             MPCV2
@@ -2380,7 +2102,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/MPCV2/MPC%20v2%20%E7%AE%97%E6%B3%95%E6%8A%80%E6%9C%AF%E6%96%87%E6%A1%A3.html" class="md-nav__link">
+      <a href="MPC%20v2%20%E7%AE%97%E6%B3%95%E6%8A%80%E6%9C%AF%E6%96%87%E6%A1%A3.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2401,7 +2123,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/MPCV2/MPC_V2.html" class="md-nav__link">
+      <a href="MPC_V2.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2419,10 +2141,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="mydocs/MPCV2/%E6%8A%95%E5%BD%B1%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%E6%B1%82%E8%A7%A3MPC%E9%97%AE%E9%A2%98.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    投影梯度下降法求解MPC问题
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="%E6%8A%95%E5%BD%B1%E6%A2%AF%E5%BA%A6%E4%B8%8B%E9%99%8D%E6%B3%95%E6%B1%82%E8%A7%A3MPC%E9%97%AE%E9%A2%98.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2431,6 +2173,395 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. 问题定义
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 问题定义">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-mpc" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.1 MPC优化问题
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      1.2 变量定义
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. 三节点热力学模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 三节点热力学模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 模型结构
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 状态方程（欧拉法离散化）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 模型参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. 投影梯度下降算法
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 投影梯度下降算法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 算法原理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 梯度计算
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-armijo" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Armijo线搜索
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.4 投影操作
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 改进算法流程
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 改进算法流程">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 算法伪代码
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 关键改进点
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. 收敛性分析
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 收敛性分析">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.1 收敛条件
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.2 收敛性保证
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. 热启动策略
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 热启动策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.1 热启动原理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2 热启动优势
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3 热启动效果
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-numba" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Numba加速实现
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Numba加速实现">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      7.1 加速策略
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      7.2 性能基准
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. 应用场景
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 应用场景">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      8.1 适用场景
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      8.2 参数调优建议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. 参考文献
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录A: 目标函数展开
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="附录A: 目标函数展开">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.1 跟踪误差项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.2 终端状态惩罚项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.3 变化率惩罚项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.4 总目标函数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录B: 代码实现
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2451,7 +2582,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/%E4%B8%B2%E5%8F%A3%E5%8E%8B%E5%8A%9B%E4%BC%A0%E6%84%9F%E5%99%A8.html" class="md-nav__link">
+      <a href="../%E4%B8%B2%E5%8F%A3%E5%8E%8B%E5%8A%9B%E4%BC%A0%E6%84%9F%E5%99%A8.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2472,7 +2603,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/%E6%B8%A9%E5%BA%A6%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E6%A8%A1%E5%9D%97.html" class="md-nav__link">
+      <a href="../%E6%B8%A9%E5%BA%A6%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E6%A8%A1%E5%9D%97.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2493,7 +2624,7 @@
   
   
     <li class="md-nav__item">
-      <a href="mydocs/ExtrusionPressureControl.html" class="md-nav__link">
+      <a href="../ExtrusionPressureControl.html" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2541,235 +2672,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#enabling-the-api-socket" class="md-nav__link">
+  <a href="#1" class="md-nav__link">
     <span class="md-ellipsis">
-      Enabling the API socket
+      1. 问题定义
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#request-format" class="md-nav__link">
-    <span class="md-ellipsis">
-      Request format
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#api-protocol" class="md-nav__link">
-    <span class="md-ellipsis">
-      API Protocol
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#subscriptions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Subscriptions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#available-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      Available "endpoints"
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Available "endpoints"">
+    <nav class="md-nav" aria-label="1. 问题定义">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#info" class="md-nav__link">
+  <a href="#11-mpc" class="md-nav__link">
     <span class="md-ellipsis">
-      info
+      1.1 MPC优化问题
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#emergency_stop" class="md-nav__link">
+  <a href="#12" class="md-nav__link">
     <span class="md-ellipsis">
-      emergency_stop
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#register_remote_method" class="md-nav__link">
-    <span class="md-ellipsis">
-      register_remote_method
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectslist" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/list
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectsquery" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/query
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#objectssubscribe" class="md-nav__link">
-    <span class="md-ellipsis">
-      objects/subscribe
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodehelp" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/help
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodescript" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/script
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcoderestart" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/restart
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodefirmware_restart" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/firmware_restart
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gcodesubscribe_output" class="md-nav__link">
-    <span class="md-ellipsis">
-      gcode/subscribe_output
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#motion_reportdump_stepper" class="md-nav__link">
-    <span class="md-ellipsis">
-      motion_report/dump_stepper
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#motion_reportdump_trapq" class="md-nav__link">
-    <span class="md-ellipsis">
-      motion_report/dump_trapq
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#adxl345dump_adxl345" class="md-nav__link">
-    <span class="md-ellipsis">
-      adxl345/dump_adxl345
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#angledump_angle" class="md-nav__link">
-    <span class="md-ellipsis">
-      angle/dump_angle
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#load_celldump_force" class="md-nav__link">
-    <span class="md-ellipsis">
-      load_cell/dump_force
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#load_cell_probedump_taps" class="md-nav__link">
-    <span class="md-ellipsis">
-      load_cell_probe/dump_taps
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumecancel" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/cancel
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumepause" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/pause
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pause_resumeresume" class="md-nav__link">
-    <span class="md-ellipsis">
-      pause_resume/resume
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#query_endstopsstatus" class="md-nav__link">
-    <span class="md-ellipsis">
-      query_endstops/status
+      1.2 变量定义
     </span>
   </a>
   
@@ -2777,6 +2701,342 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. 三节点热力学模型
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 三节点热力学模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.1 模型结构
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.2 状态方程（欧拉法离散化）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      2.3 模型参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. 投影梯度下降算法
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 投影梯度下降算法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.1 算法原理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.2 梯度计算
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-armijo" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.3 Armijo线搜索
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      3.4 投影操作
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. 改进算法流程
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 改进算法流程">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.1 算法伪代码
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      4.2 关键改进点
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. 收敛性分析
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 收敛性分析">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.1 收敛条件
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      5.2 收敛性保证
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. 热启动策略
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 热启动策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.1 热启动原理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.2 热启动优势
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      6.3 热启动效果
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-numba" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Numba加速实现
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Numba加速实现">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      7.1 加速策略
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      7.2 性能基准
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      8. 应用场景
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 应用场景">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      8.1 适用场景
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      8.2 参数调优建议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      9. 参考文献
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录A: 目标函数展开
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="附录A: 目标函数展开">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a1" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.1 跟踪误差项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.2 终端状态惩罚项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a3" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.3 变化率惩罚项
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a4" class="md-nav__link">
+    <span class="md-ellipsis">
+      A.4 总目标函数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b" class="md-nav__link">
+    <span class="md-ellipsis">
+      附录B: 代码实现
+    </span>
+  </a>
   
 </li>
       
@@ -2795,7 +3055,7 @@
                   
 
   
-    <a href="https://github.com/KalicoCrew/kalico/edit/main/docs/API_Server.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/KalicoCrew/kalico/edit/main/docs/mydocs/MPCV2/投影梯度下降法求解MPC问题.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2803,346 +3063,538 @@
   
 
 
-<h1 id="api-server">API server<a class="headerlink" href="#api-server" title="Permanent link">&para;</a></h1>
-<p>This document describes Kalico's Application Programmer Interface
-(API). This interface enables external applications to query and
-control the Kalico host software.</p>
-<h2 id="enabling-the-api-socket">Enabling the API socket<a class="headerlink" href="#enabling-the-api-socket" title="Permanent link">&para;</a></h2>
-<p>In order to use the API server, the klippy.py host software must be
-started with the <code>-a</code> parameter. For example:</p>
-<div class="highlight"><pre><span></span><code>~/klippy-env/bin/python ~/klipper/klippy/klippy.py ~/printer.cfg -a /tmp/klippy_uds -l /tmp/klippy.log
+<h1 id="mpc">投影梯度下降法求解MPC问题<a class="headerlink" href="#mpc" title="Permanent link">&para;</a></h1>
+<h2 id="1">1. 问题定义<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="11-mpc">1.1 MPC优化问题<a class="headerlink" href="#11-mpc" title="Permanent link">&para;</a></h3>
+<p>模型预测控制(MPC)的核心是在每个控制周期求解以下优化问题：</p>
+<div class="arithmatex">\[
+\min_{u_0, u_1, \ldots, u_{N_c-1}} J = \sum_{k=1}^{N_p} w_{track} (T_s(k) - T_{ref})^2 + w_{terminal} (T_s(N_p) - T_{ref})^2 + w_{rate} (u_0 - u_{last})^2 + \sum_{k=1}^{N_c-1} w_{rate} (u_k - u_{k-1})^2
+\]</div>
+<p><strong>约束条件：</strong></p>
+<div class="arithmatex">\[
+u_{min} \leq u_k \leq u_{max}, \quad k = 0, 1, \ldots, N_c - 1
+\]</div>
+<p><strong>零阶保持策略：</strong></p>
+<div class="arithmatex">\[
+u_k = u_{N_c-1}, \quad k = N_c, N_c+1, \ldots, N_p - 1
+\]</div>
+<h3 id="12">1.2 变量定义<a class="headerlink" href="#12" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(N_p\)</span></td>
+<td>预测时域 (Prediction Horizon)</td>
+<td>步</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N_c\)</span></td>
+<td>控制时域 (Control Horizon)</td>
+<td>步</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(u_k\)</span></td>
+<td>第 <span class="arithmatex">\(k\)</span> 步的控制量（功率）</td>
+<td>W</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(T_s(k)\)</span></td>
+<td>第 <span class="arithmatex">\(k\)</span> 步的传感器温度预测值</td>
+<td>°C</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(T_{ref}\)</span></td>
+<td>目标温度</td>
+<td>°C</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{track}\)</span></td>
+<td>跟踪误差权重</td>
+<td>-</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{terminal}\)</span></td>
+<td>终端状态权重</td>
+<td>-</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{rate}\)</span></td>
+<td>控制变化率权重</td>
+<td>-</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(u_{last}\)</span></td>
+<td>上一次控制量</td>
+<td>W</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(u_{min}, u_{max}\)</span></td>
+<td>控制量上下界</td>
+<td>W</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2">2. 三节点热力学模型<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="21">2.1 模型结构<a class="headerlink" href="#21" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>[加热器 T_h] --θ₁--&gt; [加热块 T_b] --θ₃--&gt; [传感器 T_s]
+     |                   |                    |
+   θ₈·P               θ₂·ΔT                θ₄·ΔT
+     |                   |                    |
+   热源              散热损耗              温度测量
 </code></pre></div>
 
-<p>This causes the host software to create a Unix Domain Socket. A client
-can then open a connection on that socket and send commands to
-Kalico.</p>
-<p>See the <a href="https://github.com/Arksine/moonraker">Moonraker</a> project for
-a popular tool that can forward HTTP requests to Kalico's API Server
-Unix Domain Socket.</p>
-<h2 id="request-format">Request format<a class="headerlink" href="#request-format" title="Permanent link">&para;</a></h2>
-<p>Messages sent and received on the socket are JSON encoded strings
-terminated by an ASCII 0x03 character:</p>
-<div class="highlight"><pre><span></span><code>&lt;json_object_1&gt;&lt;0x03&gt;&lt;json_object_2&gt;&lt;0x03&gt;...
-</code></pre></div>
-
-<p>Kalico contains a <code>scripts/whconsole.py</code> tool that can perform the
-above message framing. For example:</p>
-<div class="highlight"><pre><span></span><code>~/klipper/scripts/whconsole.py /tmp/klippy_uds
-</code></pre></div>
-
-<p>This tool can read a series of JSON commands from stdin, send them to
-Kalico, and report the results. The tool expects each JSON command to
-be on a single line, and it will automatically append the 0x03
-terminator when transmitting a request. (The Kalico API server does
-not have a newline requirement.)</p>
-<h2 id="api-protocol">API Protocol<a class="headerlink" href="#api-protocol" title="Permanent link">&para;</a></h2>
-<p>The command protocol used on the communication socket is inspired by
-<a href="https://www.jsonrpc.org/">json-rpc</a>.</p>
-<p>A request might look like:</p>
-<p><code>{"id": 123, "method": "info", "params": {}}</code></p>
-<p>and a response might look like:</p>
-<p><code>{"id": 123, "result": {"state_message": "Printer is ready",
-"klipper_path": "/home/pi/klipper", "config_file":
-"/home/pi/printer.cfg", "software_version": "v0.8.0-823-g883b1cb6",
-"hostname": "octopi", "cpu_info": "4 core ARMv7 Processor rev 4
-(v7l)", "state": "ready", "python_path":
-"/home/pi/klippy-env/bin/python", "log_file": "/tmp/klippy.log"}}</code></p>
-<p>Each request must be a JSON dictionary. (This document uses the Python
-term "dictionary" to describe a "JSON object" - a mapping of key/value
-pairs contained within <code>{}</code>.)</p>
-<p>The request dictionary must contain a "method" parameter that is the
-string name of an available Kalico "endpoint".</p>
-<p>The request dictionary may contain a "params" parameter which must be
-of a dictionary type. The "params" provide additional parameter
-information to the Kalico "endpoint" handling the request. Its
-content is specific to the "endpoint".</p>
-<p>The request dictionary may contain an "id" parameter which may be of
-any JSON type. If "id" is present then Kalico will respond to the
-request with a response message containing that "id". If "id" is
-omitted (or set to a JSON "null" value) then Kalico will not provide
-any response to the request. A response message is a JSON dictionary
-containing "id" and "result". The "result" is always a dictionary -
-its contents are specific to the "endpoint" handling the request.</p>
-<p>If the processing of a request results in an error, then the response
-message will contain an "error" field instead of a "result" field. For
-example, the request:
-<code>{"id": 123, "method": "gcode/script", "params": {"script": "G1
-X200"}}</code>
-might result in an error response such as:
-<code>{"id": 123, "error": {"message": "Must home axis
-first: 200.000 0.000 0.000 [0.000]", "error": "WebRequestError"}}</code></p>
-<p>Kalico will always start processing requests in the order that they
-are received. However, some request may not complete immediately,
-which could cause the associated response to be sent out of order with
-respect to responses from other requests. A JSON request will never
-pause the processing of future JSON requests.</p>
-<h2 id="subscriptions">Subscriptions<a class="headerlink" href="#subscriptions" title="Permanent link">&para;</a></h2>
-<p>Some Kalico "endpoint" requests allow one to "subscribe" to future
-asynchronous update messages.</p>
-<p>For example:</p>
-<p><code>{"id": 123, "method": "gcode/subscribe_output", "params":
-{"response_template":{"key": 345}}}</code></p>
-<p>may initially respond with:</p>
-<p><code>{"id": 123, "result": {}}</code></p>
-<p>and cause Kalico to send future messages similar to:</p>
-<p><code>{"params": {"response": "ok B:22.8 /0.0 T0:22.4 /0.0"}, "key": 345}</code></p>
-<p>A subscription request accepts a "response_template" dictionary in the
-"params" field of the request. That "response_template" dictionary is
-used as a template for future asynchronous messages - it may contain
-arbitrary key/value pairs. When sending these future asynchronous
-messages, Kalico will add a "params" field containing a dictionary
-with "endpoint" specific contents to the response template and then
-send that template. If a "response_template" field is not provided
-then it defaults to an empty dictionary (<code>{}</code>).</p>
-<h2 id="available-endpoints">Available "endpoints"<a class="headerlink" href="#available-endpoints" title="Permanent link">&para;</a></h2>
-<p>By convention, Kalico "endpoints" are of the form
-<code>&lt;module_name&gt;/&lt;some_name&gt;</code>. When making a request to an "endpoint",
-the full name must be set in the "method" parameter of the request
-dictionary (eg, <code>{"method"="gcode/restart"}</code>).</p>
-<h3 id="info">info<a class="headerlink" href="#info" title="Permanent link">&para;</a></h3>
-<p>The "info" endpoint is used to obtain system and version information
-from Kalico. It is also used to provide the client's version
-information to Kalico. For example:
-<code>{"id": 123, "method": "info", "params": { "client_info": { "version":
-"v1"}}}</code></p>
-<p>If present, the "client_info" parameter must be a dictionary, but that
-dictionary may have arbitrary contents. Clients are encouraged to
-provide the name of the client and its software version when first
-connecting to the Kalico API server.</p>
-<h3 id="emergency_stop">emergency_stop<a class="headerlink" href="#emergency_stop" title="Permanent link">&para;</a></h3>
-<p>The "emergency_stop" endpoint is used to instruct Kalico to
-transition to a "shutdown" state. It behaves similarly to the G-Code
-<code>M112</code> command. For example:
-<code>{"id": 123, "method": "emergency_stop"}</code></p>
-<h3 id="register_remote_method">register_remote_method<a class="headerlink" href="#register_remote_method" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows clients to register methods that can be called
-from Kalico.  It will return an empty object upon success.</p>
-<p>For example:
-<code>{"id": 123, "method": "register_remote_method",
-"params": {"response_template": {"action": "run_paneldue_beep"},
-"remote_method": "paneldue_beep"}}</code>
-will return:
-<code>{"id": 123, "result": {}}</code></p>
-<p>The remote method <code>paneldue_beep</code> may now be called from KliKalicopper. Note
-that if the method takes parameters they should be provided as keyword
-arguments. Below is an example of how it may called from a gcode_macro:</p>
-<div class="highlight"><pre><span></span><code>[gcode_macro PANELDUE_BEEP]
-gcode:
-  {action_call_remote_method(&quot;paneldue_beep&quot;, frequency=300, duration=1.0)}
-</code></pre></div>
-
-<p>When the PANELDUE_BEEP gcode macro is executed, Kalico would send something
-like the following over the socket:
-<code>{"action": "run_paneldue_beep",
-"params": {"frequency": 300, "duration": 1.0}}</code></p>
-<h3 id="objectslist">objects/list<a class="headerlink" href="#objectslist" title="Permanent link">&para;</a></h3>
-<p>This endpoint queries the list of available printer "objects" that one
-may query (via the "objects/query" endpoint). For example:
-<code>{"id": 123, "method": "objects/list"}</code>
-might return:
-<code>{"id": 123, "result": {"objects":
-["webhooks", "configfile", "heaters", "gcode_move", "query_endstops",
-"idle_timeout", "toolhead", "extruder"]}}</code></p>
-<h3 id="objectsquery">objects/query<a class="headerlink" href="#objectsquery" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows one to query information from printer objects.
-For example:
-<code>{"id": 123, "method": "objects/query", "params": {"objects":
-{"toolhead": ["position"], "webhooks": null}}}</code>
-might return:
-<code>{"id": 123, "result": {"status": {"webhooks": {"state": "ready",
-"state_message": "Printer is ready"}, "toolhead": {"position":
-[0.0, 0.0, 0.0, 0.0]}}, "eventtime": 3051555.377933684}}</code></p>
-<p>The "objects" parameter in the request must be a dictionary containing
-the printer objects that are to be queried - the key contains the
-printer object name and the value is either "null" (to query all
-fields) or a list of field names.</p>
-<p>The response message will contain a "status" field containing a
-dictionary with the queried information - the key contains the printer
-object name and the value is a dictionary containing its fields. The
-response message will also contain an "eventtime" field containing the
-timestamp from when the query was taken.</p>
-<p>Available fields are documented in the
-<a href="Status_Reference.html">Status Reference</a> document.</p>
-<h3 id="objectssubscribe">objects/subscribe<a class="headerlink" href="#objectssubscribe" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows one to query and then subscribe to information
-from printer objects. The endpoint request and response is identical
-to the "objects/query" endpoint. For example:
-<code>{"id": 123, "method": "objects/subscribe", "params":
-{"objects":{"toolhead": ["position"], "webhooks": ["state"]},
-"response_template":{}}}</code>
-might return:
-<code>{"id": 123, "result": {"status": {"webhooks": {"state": "ready"},
-"toolhead": {"position": [0.0, 0.0, 0.0, 0.0]}},
-"eventtime": 3052153.382083195}}</code>
-and result in subsequent asynchronous messages such as:
-<code>{"params": {"status": {"webhooks": {"state": "shutdown"}},
-"eventtime": 3052165.418815847}}</code></p>
-<h3 id="gcodehelp">gcode/help<a class="headerlink" href="#gcodehelp" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows one to query available G-Code commands that have
-a help string defined. For example:
-<code>{"id": 123, "method": "gcode/help"}</code>
-might return:
-<code>{"id": 123, "result": {"RESTORE_GCODE_STATE": "Restore a previously
-saved G-Code state", "PID_CALIBRATE": "Run PID calibration test",
-"QUERY_ADC": "Report the last value of an analog pin", ...}}</code></p>
-<h3 id="gcodescript">gcode/script<a class="headerlink" href="#gcodescript" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows one to run a series of G-Code commands. For example:
-<code>{"id": 123, "method": "gcode/script", "params": {"script": "G90"}}</code></p>
-<p>If the provided G-Code script raises an error, then an error response
-is generated. However, if the G-Code command produces terminal output,
-that terminal output is not provided in the response. (Use the
-"gcode/subscribe_output" endpoint to obtain G-Code terminal output.)</p>
-<p>If there is a G-Code command being processed when this request is
-received, then the provided script will be queued. This delay could be
-significant (eg, if a G-Code wait for temperature command is running).
-The JSON response message is sent when the processing of the script
-fully completes.</p>
-<h3 id="gcoderestart">gcode/restart<a class="headerlink" href="#gcoderestart" title="Permanent link">&para;</a></h3>
-<p>This endpoint allows one to request a restart - it is similar to
-running the G-Code "RESTART" command. For example:
-<code>{"id": 123, "method": "gcode/restart"}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
-<h3 id="gcodefirmware_restart">gcode/firmware_restart<a class="headerlink" href="#gcodefirmware_restart" title="Permanent link">&para;</a></h3>
-<p>This is similar to the "gcode/restart" endpoint - it implements the
-G-Code "FIRMWARE_RESTART" command. For example:
-<code>{"id": 123, "method": "gcode/firmware_restart"}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
-<h3 id="gcodesubscribe_output">gcode/subscribe_output<a class="headerlink" href="#gcodesubscribe_output" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to G-Code terminal messages that
-are generated by Kalico. For example:
-<code>{"id": 123, "method": "gcode/subscribe_output", "params":
-{"response_template":{}}}</code>
-might later produce asynchronous messages such as:
-<code>{"params": {"response": "// Klipper state: Shutdown"}}</code></p>
-<p>This endpoint is intended to support human interaction via a "terminal
-window" interface. Parsing content from the G-Code terminal output is
-discouraged. Use the "objects/subscribe" endpoint to obtain updates on
-Kalico's state.</p>
-<h3 id="motion_reportdump_stepper">motion_report/dump_stepper<a class="headerlink" href="#motion_reportdump_stepper" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to Kalico's internal stepper
-queue_step command stream for a stepper. Obtaining these low-level
-motion updates may be useful for diagnostic and debugging
-purposes. Using this endpoint may increase Kalico's system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method":"motion_report/dump_stepper",
-"params": {"name": "stepper_x", "response_template": {}}}</code>
-and might return:
-<code>{"id": 123, "result": {"header": ["interval", "count", "add"]}}</code>
-and might later produce asynchronous messages such as:
-<code>{"params": {"first_clock": 179601081, "first_time": 8.98,
-"first_position": 0, "last_clock": 219686097, "last_time": 10.984,
-"data": [[179601081, 1, 0], [29573, 2, -8685], [16230, 4, -1525],
-[10559, 6, -160], [10000, 976, 0], [10000, 1000, 0], [10000, 1000, 0],
-[10000, 1000, 0], [9855, 5, 187], [11632, 4, 1534], [20756, 2, 9442]]}}</code></p>
-<p>The "header" field in the initial query response is used to describe
-the fields found in later "data" responses.</p>
-<h3 id="motion_reportdump_trapq">motion_report/dump_trapq<a class="headerlink" href="#motion_reportdump_trapq" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to Kalico's internal "trapezoid
-motion queue". Obtaining these low-level motion updates may be useful
-for diagnostic and debugging purposes. Using this endpoint may
-increase Kalico's system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method": "motion_report/dump_trapq", "params":
-{"name": "toolhead", "response_template":{}}}</code>
-and might return:
-<code>{"id": 1, "result": {"header": ["time", "duration",
-"start_velocity", "acceleration", "start_position", "direction"]}}</code>
-and might later produce asynchronous messages such as:
-<code>{"params": {"data": [[4.05, 1.0, 0.0, 0.0, [300.0, 0.0, 0.0],
-[0.0, 0.0, 0.0]], [5.054, 0.001, 0.0, 3000.0, [300.0, 0.0, 0.0],
-[-1.0, 0.0, 0.0]]]}}</code></p>
-<p>The "header" field in the initial query response is used to describe
-the fields found in later "data" responses.</p>
-<h3 id="adxl345dump_adxl345">adxl345/dump_adxl345<a class="headerlink" href="#adxl345dump_adxl345" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to ADXL345 accelerometer data.
-Obtaining these low-level motion updates may be useful for diagnostic
-and debugging purposes. Using this endpoint may increase Kalico's
-system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method":"adxl345/dump_adxl345",
-"params": {"sensor": "adxl345", "response_template": {}}}</code>
-and might return:
-<code>{"id": 123,"result":{"header":["time","x_acceleration","y_acceleration",
-"z_acceleration"]}}</code>
-and might later produce asynchronous messages such as:
-<code>{"params":{"overflows":0,"data":[[3292.432935,-535.44309,-1529.8374,9561.4],
-[3292.433256,-382.45935,-1606.32927,9561.48375]]}}</code></p>
-<p>The "header" field in the initial query response is used to describe
-the fields found in later "data" responses.</p>
-<h3 id="angledump_angle">angle/dump_angle<a class="headerlink" href="#angledump_angle" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to
-<a href="Config_Reference.html#angle">angle sensor data</a>. Obtaining these
-low-level motion updates may be useful for diagnostic and debugging
-purposes. Using this endpoint may increase Kalico's system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method":"angle/dump_angle",
-"params": {"sensor": "my_angle_sensor", "response_template": {}}}</code>
-and might return:
-<code>{"id": 123,"result":{"header":["time","angle"]}}</code>
-and might later produce asynchronous messages such as:
-<code>{"params":{"position_offset":3.151562,"errors":0,
-"data":[[1290.951905,-5063],[1290.952321,-5065]]}}</code></p>
-<p>The "header" field in the initial query response is used to describe
-the fields found in later "data" responses.</p>
-<h3 id="load_celldump_force">load_cell/dump_force<a class="headerlink" href="#load_celldump_force" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to force data produced by a load_cell.
-Using this endpoint may increase Klipper's system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method":"load_cell/dump_force",
-"params": {"sensor": "load_cell", "response_template": {}}}</code>
-and might return:
-<code>{"id": 123,"result":{"header":["time", "force (g)", "counts", "tare_counts"]}}</code>
-and might later produce asynchronous messages such as:
-<code>{"params":{"data":[[3292.432935, 40.65, 562534, -234467]]}}</code></p>
-<p>The "header" field in the initial query response is used to describe
-the fields found in later "data" responses.</p>
-<h3 id="load_cell_probedump_taps">load_cell_probe/dump_taps<a class="headerlink" href="#load_cell_probedump_taps" title="Permanent link">&para;</a></h3>
-<p>This endpoint is used to subscribe to details of probing "tap" events.
-Using this endpoint may increase Klipper's system load.</p>
-<p>A request may look like:
-<code>{"id": 123, "method":"load_cell/dump_force",
-"params": {"sensor": "load_cell", "response_template": {}}}</code>
-and might return:
-<code>{"id": 123,"result":{"header":["probe_tap_event"]}}</code>
-and might later produce asynchronous messages such as:</p>
-<div class="highlight"><pre><span></span><code>{&quot;params&quot;:{&quot;tap&quot;:{
-   &quot;time&quot;: [118032.28039, 118032.2834, ...],
-   &quot;force&quot;: [-459.4213119680034, -458.1640702543264, ...],
-}}}
-</code></pre></div>
-
-<p>This data can be used to render:</p>
+<h3 id="22">2.2 状态方程（欧拉法离散化）<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<p><strong>加热器温度：</strong></p>
+<div class="arithmatex">\[
+T_h(k+1) = T_h(k) + \Delta t \cdot [\theta_8 \cdot P(k) - \theta_1 \cdot (T_h(k) - T_b(k))]
+\]</div>
+<p><strong>加热块温度：</strong></p>
+<div class="arithmatex">\[
+T_b(k+1) = T_b(k) + \Delta t \cdot [q_{hb} - q_{bs} - P_{conv} - P_{cond} - P_{rad} - P_{ext}]
+\]</div>
+<p>其中：</p>
+<div class="arithmatex">\[
+\begin{aligned}
+q_{hb} &amp;= \theta_2 \cdot (T_h - T_b) &amp; \text{(加热器到加热块传热)} \&lt;br&gt;
+q_{bs} &amp;= \theta_3 \cdot (T_b - T_s) &amp; \text{(加热块到传感器传热)} \&lt;br&gt;
+P_{conv} &amp;= \theta_5 \cdot (T_b - T_{env}) &amp; \text{(对流散热)} \&lt;br&gt;
+P_{cond} &amp;= \theta_6 \cdot (T_b - T_{cold}) &amp; \text{(传导散热)} \&lt;br&gt;
+P_{rad} &amp;= \theta_7 \cdot (T_b^4 - T_{env}^4) &amp; \text{(辐射散热)} \&lt;br&gt;
+P_{ext} &amp;= v_f \cdot c_p \cdot \theta_9 \cdot (T_b - T_{filament}) &amp; \text{(挤出散热)}
+\end{aligned}
+\]</div>
+<p><strong>传感器温度：</strong></p>
+<div class="arithmatex">\[
+T_s(k+1) = T_s(k) + \Delta t \cdot \theta_4 \cdot (T_b(k) - T_s(k))
+\]</div>
+<h3 id="23">2.3 模型参数<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>物理含义</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(\theta_1\)</span></td>
+<td>加热器到加热块热传导系数</td>
+<td>5.03e-2 1/s</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_2\)</span></td>
+<td>加热块从加热器获热系数</td>
+<td>2.81e-1 1/s</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_3\)</span></td>
+<td>加热块到传感器热传导系数</td>
+<td>1.07e-2 1/s</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_4\)</span></td>
+<td>传感器响应系数</td>
+<td>1.37e-1 1/s</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_5\)</span></td>
+<td>对流换热系数</td>
+<td>3.20e-3 W/K</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_6\)</span></td>
+<td>传导散热系数</td>
+<td>2.33e-2 W/K</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_7\)</span></td>
+<td>辐射散热系数</td>
+<td>2.57e-11 W/K⁴</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_8\)</span></td>
+<td>加热器功率转换系数</td>
+<td>8.00e-2 K/(W·s)</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\theta_9\)</span></td>
+<td>挤出散热系数</td>
+<td><span class="arithmatex">\(\theta_8 \cdot \theta_2 / \theta_1\)</span></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3">3. 投影梯度下降算法<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="31">3.1 算法原理<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<p>投影梯度下降法是求解带约束优化问题的有效方法，其核心思想是：</p>
+<ol>
+<li><strong>梯度下降</strong>：沿负梯度方向更新解</li>
+<li><strong>投影操作</strong>：将解投影回可行域</li>
+</ol>
+<h3 id="32">3.2 梯度计算<a class="headerlink" href="#32" title="Permanent link">&para;</a></h3>
+<p>采用<strong>有限差分法</strong>近似计算目标函数关于控制序列的梯度：</p>
+<div class="arithmatex">\[
+\frac{\partial J}{\partial u_i} \approx \frac{J(u + \epsilon e_i) - J(u)}{\epsilon}
+\]</div>
+<p>其中：</p>
 <ul>
-<li>The time/force graph</li>
+<li><span class="arithmatex">\(\epsilon\)</span> 为差分步长，通常取 <span class="arithmatex">\(10^{-4}\)</span></li>
+<li><span class="arithmatex">\(e_i\)</span> 为第 <span class="arithmatex">\(i\)</span> 个单位向量</li>
 </ul>
-<h3 id="pause_resumecancel">pause_resume/cancel<a class="headerlink" href="#pause_resumecancel" title="Permanent link">&para;</a></h3>
-<p>This endpoint is similar to running the "PRINT_CANCEL" G-Code command.
-For example:
-<code>{"id": 123, "method": "pause_resume/cancel"}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
-<h3 id="pause_resumepause">pause_resume/pause<a class="headerlink" href="#pause_resumepause" title="Permanent link">&para;</a></h3>
-<p>This endpoint is similar to running the "PAUSE" G-Code command. For
-example:
-<code>{"id": 123, "method": "pause_resume/pause"}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
-<h3 id="pause_resumeresume">pause_resume/resume<a class="headerlink" href="#pause_resumeresume" title="Permanent link">&para;</a></h3>
-<p>This endpoint is similar to running the "RESUME" G-Code command. For
-example:
-<code>{"id": 123, "method": "pause_resume/resume"}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
-<h3 id="query_endstopsstatus">query_endstops/status<a class="headerlink" href="#query_endstopsstatus" title="Permanent link">&para;</a></h3>
-<p>This endpoint will query the active endpoints and return their status.
-For example:
-<code>{"id": 123, "method": "query_endstops/status"}</code>
-might return:
-<code>{"id": 123, "result": {"y": "open", "x": "open", "z": "TRIGGERED"}}</code></p>
-<p>As with the "gcode/script" endpoint, this endpoint only completes
-after any pending G-Code commands complete.</p>
+<p><strong>梯度向量：</strong></p>
+<div class="arithmatex">\[
+\nabla J = \left[ \frac{\partial J}{\partial u_0}, \frac{\partial J}{\partial u_1}, \ldots, \frac{\partial J}{\partial u_{N_c-1}} \right]^T
+\]</div>
+<h3 id="33-armijo">3.3 Armijo线搜索<a class="headerlink" href="#33-armijo" title="Permanent link">&para;</a></h3>
+<p>为保证每次迭代目标函数下降，采用Armijo条件确定步长：</p>
+<p><strong>Armijo条件：</strong></p>
+<div class="arithmatex">\[
+J(u - \alpha \nabla J) \leq J(u) - c_1 \alpha \|\nabla J\|^2
+\]</div>
+<p>其中：</p>
+<ul>
+<li><span class="arithmatex">\(\alpha\)</span> 为步长</li>
+<li><span class="arithmatex">\(c_1\)</span> 为Armijo参数，通常取 <span class="arithmatex">\(10^{-4}\)</span></li>
+<li><span class="arithmatex">\(\|\nabla J\|\)</span> 为梯度范数</li>
+</ul>
+<p><strong>回溯策略：</strong></p>
+<div class="arithmatex">\[
+\alpha_{k+1} = \rho \cdot \alpha_k, \quad \rho \in (0, 1)
+\]</div>
+<p>通常取 <span class="arithmatex">\(\rho = 0.5\)</span>，初始步长 <span class="arithmatex">\(\alpha_0 = 1.0\)</span>。</p>
+<h3 id="34">3.4 投影操作<a class="headerlink" href="#34" title="Permanent link">&para;</a></h3>
+<p>将控制序列投影到可行域 <span class="arithmatex">\([u_{min}, u_{max}]\)</span>：</p>
+<div class="arithmatex">\[
+\text{Proj}_{[u_{min}, u_{max}]}(u_i) = \begin{cases}
+u_{min} &amp; \text{if } u_i &lt; u_{min} \&lt;br&gt;
+u_i &amp; \text{if } u_{min} \leq u_i \leq u_{max} \&lt;br&gt;
+u_{max} &amp; \text{if } u_i &gt; u_{max}
+\end{cases}
+\]</div>
+<hr />
+<h2 id="4">4. 改进算法流程<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<h3 id="41">4.1 算法伪代码<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>算法: 改进的投影梯度下降法求解MPC
+
+输入: 初始状态 (T_h, T_b, T_s), 目标温度 T_ref, 初始控制序列 u_init
+输出: 最优控制序列 best_u, 收敛标志 converged, 迭代次数 iterations
+
+
+1. 初始化:
+   u = u_init
+   best_cost = J(u)
+   best_u = u
+   converged = False
+   iterations = 0
+
+
+2. 主循环 (for it = 1 to max_iter):
+
+   2.1 计算梯度:
+       grad = ∇J(u)
+
+   2.2 检查梯度收敛:
+       if ||grad|| &lt; tol:
+           converged = True
+           break
+
+   2.3 Armijo线搜索:
+       alpha = line_search(u, grad)
+
+   2.4 更新控制序列:
+       u = u - alpha * grad
+
+   2.5 投影到可行域:
+       u = Proj(u, [u_min, u_max])
+
+   2.6 最优解追踪:
+       cost = J(u)
+       if cost &lt; best_cost:
+           improvement = best_cost - cost
+           best_cost = cost
+           best_u = u
+
+           if improvement &lt; tol:
+               converged = True
+               break
+
+   2.7 iterations = it
+
+
+3. 返回 (best_u, converged, iterations)
+</code></pre></div>
+
+<h3 id="42">4.2 关键改进点<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>改进</th>
+<th>原算法</th>
+<th>改进后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>最优解追踪</strong></td>
+<td>返回最后迭代解</td>
+<td>返回历史最优解</td>
+</tr>
+<tr>
+<td><strong>收敛条件</strong></td>
+<td>仅梯度范数</td>
+<td>梯度范数 + 目标函数改进</td>
+</tr>
+<tr>
+<td><strong>稳定性</strong></td>
+<td>可能震荡</td>
+<td>保证返回最优解</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5">5. 收敛性分析<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="51">5.1 收敛条件<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<p><strong>条件1：梯度范数收敛</strong></p>
+<div class="arithmatex">\[
+\|\nabla J\| &lt; \epsilon_{grad}
+\]</div>
+<p>表示当前点接近局部最优解。</p>
+<p><strong>条件2：目标函数改进收敛</strong></p>
+<div class="arithmatex">\[
+J_{best}^{old} - J_{best}^{new} &lt; \epsilon_{cost}
+\]</div>
+<p>表示目标函数改进已足够小。</p>
+<h3 id="52">5.2 收敛性保证<a class="headerlink" href="#52" title="Permanent link">&para;</a></h3>
+<p>在以下条件下，算法保证收敛：</p>
+<ol>
+<li><strong>目标函数凸性</strong>：目标函数在可行域内为凸函数</li>
+<li><strong>Lipschitz连续梯度</strong>：存在 <span class="arithmatex">\(L &gt; 0\)</span> 使得 <span class="arithmatex">\(\|\nabla J(x) - \nabla J(y)\| \leq L\|x - y\|\)</span></li>
+<li><strong>步长条件</strong>：<span class="arithmatex">\(\alpha \leq 1/L\)</span></li>
+</ol>
+<p><strong>收敛速率：</strong></p>
+<p>对于凸目标函数，投影梯度下降法具有 <span class="arithmatex">\(O(1/k)\)</span> 的收敛速率：</p>
+<div class="arithmatex">\[
+J(u_k) - J(u^*) \leq \frac{\|u_0 - u^*\|^2}{2k\alpha}
+\]</div>
+<hr />
+<h2 id="6">6. 热启动策略<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="61">6.1 热启动原理<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<p>利用MPC的时移特性，将上一时刻的解作为当前时刻的初始猜测：</p>
+<div class="arithmatex">\[
+u_{init}^{(k)} = [u_1^{(k-1)}, u_2^{(k-1)}, \ldots, u_{N_c-1}^{(k-1)}, u_{N_c-1}^{(k-1)}]
+\]</div>
+<h3 id="62">6.2 热启动优势<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>冷启动</th>
+<th>热启动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>初始解质量</td>
+<td>较差</td>
+<td>接近最优</td>
+</tr>
+<tr>
+<td>迭代次数</td>
+<td>多 (~100)</td>
+<td>少 (~10)</td>
+</tr>
+<tr>
+<td>计算时间</td>
+<td>长 (~18ms)</td>
+<td>短 (~1ms)</td>
+</tr>
+<tr>
+<td>收敛稳定性</td>
+<td>可能未收敛</td>
+<td>通常收敛</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63">6.3 热启动效果<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>周期 1: 冷启动 (~18ms) → 得到初始解
+周期 2: 热启动 (~1ms)  → 从上次解继续优化
+周期 3: 热启动 (~1ms)  → ...
+周期 N: 热启动 (~1ms)  → ...
+</code></pre></div>
+
+<hr />
+<h2 id="7-numba">7. Numba加速实现<a class="headerlink" href="#7-numba" title="Permanent link">&para;</a></h2>
+<h3 id="71">7.1 加速策略<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>技术</th>
+<th>说明</th>
+<th>加速比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@jit(nopython=True)</code></td>
+<td>编译为机器码</td>
+<td>10-100x</td>
+</tr>
+<tr>
+<td><code>cache=True</code></td>
+<td>缓存编译结果</td>
+<td>避免重复编译</td>
+</tr>
+<tr>
+<td><code>fastmath=True</code></td>
+<td>放宽浮点精度</td>
+<td>1.5-2x</td>
+</tr>
+<tr>
+<td><code>parallel=True</code></td>
+<td>并行计算</td>
+<td>多核加速</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72">7.2 性能基准<a class="headerlink" href="#72" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单步模型预测</td>
+<td>0.0005 ms</td>
+</tr>
+<tr>
+<td>MPC目标函数</td>
+<td>0.0014 ms</td>
+</tr>
+<tr>
+<td>EKF状态更新</td>
+<td>0.0044 ms</td>
+</tr>
+<tr>
+<td>MPC求解(冷启动)</td>
+<td>18.28 ms</td>
+</tr>
+<tr>
+<td>MPC求解(热启动)</td>
+<td>0.76 ms</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8">8. 应用场景<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="81">8.1 适用场景<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>3D打印机温度控制</strong>：挤出头、热床温度精确控制</li>
+<li><strong>实时嵌入式系统</strong>：计算资源受限的实时控制</li>
+<li><strong>多变量控制</strong>：可扩展到多输入多输出系统</li>
+</ul>
+<h3 id="82">8.2 参数调优建议<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>推荐值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(N_p\)</span></td>
+<td>20-30</td>
+<td>预测时域，越大越精确但计算量增加</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(N_c\)</span></td>
+<td>5-10</td>
+<td>控制时域，通常为 <span class="arithmatex">\(N_p\)</span> 的 1/3</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{track}\)</span></td>
+<td>10.0</td>
+<td>跟踪权重，越大跟踪越紧</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{terminal}\)</span></td>
+<td>50.0</td>
+<td>终端权重，确保终端状态接近目标</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(w_{rate}\)</span></td>
+<td>0.1</td>
+<td>变化率权重，越大功率变化越平滑</td>
+</tr>
+<tr>
+<td><code>tol</code></td>
+<td>1e-3</td>
+<td>收敛容差，与梯度精度匹配</td>
+</tr>
+<tr>
+<td><code>max_iter</code></td>
+<td>100</td>
+<td>最大迭代次数</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9">9. 参考文献<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<ol>
+<li>
+<p>Boyd, S., &amp; Vandenberghe, L. (2004). <em>Convex Optimization</em>. Cambridge University Press.</p>
+</li>
+<li>
+<p>Nocedal, J., &amp; Wright, S. J. (2006). <em>Numerical Optimization</em>. Springer.</p>
+</li>
+<li>
+<p>Camacho, E. F., &amp; Bordons, C. (2007). <em>Model Predictive Control</em>. Springer.</p>
+</li>
+<li>
+<p>Rawlings, J. B., &amp; Mayne, D. Q. (2017). <em>Model Predictive Control: Theory and Design</em>. Nob Hill Publishing.</p>
+</li>
+</ol>
+<hr />
+<h2 id="a">附录A: 目标函数展开<a class="headerlink" href="#a" title="Permanent link">&para;</a></h2>
+<h3 id="a1">A.1 跟踪误差项<a class="headerlink" href="#a1" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+J_{track} = w_{track} \sum_{k=1}^{N_p} (T_s(k) - T_{ref})^2
+\]</div>
+<h3 id="a2">A.2 终端状态惩罚项<a class="headerlink" href="#a2" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+J_{terminal} = w_{terminal} (T_s(N_p) - T_{ref})^2
+\]</div>
+<h3 id="a3">A.3 变化率惩罚项<a class="headerlink" href="#a3" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+J_{rate} = w_{rate} (u_0 - u_{last})^2 + w_{rate} \sum_{k=1}^{N_c-1} (u_k - u_{k-1})^2
+\]</div>
+<h3 id="a4">A.4 总目标函数<a class="headerlink" href="#a4" title="Permanent link">&para;</a></h3>
+<div class="arithmatex">\[
+J = J_{track} + J_{terminal} + J_{rate}
+\]</div>
+<hr />
+<h2 id="b">附录B: 代码实现<a class="headerlink" href="#b" title="Permanent link">&para;</a></h2>
+<p>详见 <code>control_mpc.py</code> 文件中的以下函数：</p>
+<ul>
+<li><code>_numba_model_step()</code> - 单步模型预测</li>
+<li><code>_numba_mpc_objective()</code> - MPC目标函数</li>
+<li><code>_compute_gradient()</code> - 梯度计算</li>
+<li><code>_line_search()</code> - Armijo线搜索</li>
+<li><code>_project_to_bounds()</code> - 投影操作</li>
+<li><code>_solve_mpc_pgd()</code> - 完整求解器</li>
+</ul>
 
 
 
@@ -3211,12 +3663,12 @@ after any pending G-Code commands complete.</p>
       <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.top", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.action.edit", "optimize"], "search": "assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.top", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.action.edit", "optimize"], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.60a45f97.min.js"></script>
+      <script src="../../assets/javascripts/bundle.60a45f97.min.js"></script>
       
-        <script src="javascripts/mathjax.js"></script>
+        <script src="../../javascripts/mathjax.js"></script>
       
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
       

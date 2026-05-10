@@ -26,6 +26,8 @@ markdown_extensions:
   - mdx_truly_sane_lists
   - mdx_breakless_lists
   - admonition
+  - pymdownx.arithmatex:
+      generic: true
 plugins:
   search:
     lang: en
@@ -37,8 +39,7 @@ plugins:
     redirect_maps:
       'Danger_Features.md': 'Kalico_Additions.md'
   exclude:
-    glob:
-      - mydocs/*
+    glob: []
 
 # Website layout configuration (using mkdocs-material theme)
 theme:
@@ -78,6 +79,11 @@ theme:
 
 extra_css:
   - _kalico/css/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 extra:
   social:
@@ -166,3 +172,12 @@ nav:
   - Telemetry.md
   - Contact.md
   - Sponsors.md
+  - 我的文档:
+    - mydocs/AGENTS.md
+    - MPCV2:
+      - mydocs/MPCV2/MPC v2 算法技术文档.md
+      - mydocs/MPCV2/MPC_V2.md
+      - mydocs/MPCV2/投影梯度下降法求解MPC问题.md
+    - mydocs/串口压力传感器.md
+    - mydocs/温度数据采集模块.md
+    - mydocs/ExtrusionPressureControl.md
