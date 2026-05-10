@@ -789,6 +789,7 @@ class TemperatureDataCollector:
                 f"等待 {target_temp}°C 温度稳定 (容差: {tolerance}°C)..."
             )
 
+            stability_window = 5
             stable_start = None
             check_interval = 1.0
             last_temps = []
@@ -797,7 +798,7 @@ class TemperatureDataCollector:
                 current_temp = self._get_sensor_temp()
 
                 last_temps.append(current_temp)
-                if len(last_temps) > int(stable_duration / check_interval):
+                if len(last_temps) > int(stability_window / check_interval):
                     last_temps.pop(0)
 
                 if len(last_temps) >= 3:
@@ -807,7 +808,7 @@ class TemperatureDataCollector:
                             stable_start = self.reactor.monotonic()
                         elif (
                             self.reactor.monotonic() - stable_start
-                        ) >= stable_duration:
+                        ) >= stability_window:
                             gcmd.respond_info(
                                 f"温度 {target_temp}°C 已达到稳定状态"
                             )
