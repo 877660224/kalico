@@ -99,6 +99,18 @@
 - Commit subject format is `module: Capitalized, short summary` where `module` is usually a repo file or directory name (`docs/CONTRIBUTING.md`).
 - Commits are expected to be single-topic and independently sensible.
 - Signed-off-by lines are required by project contribution policy.
+- **Run pre-commit checks before committing**:
+  - Install hooks once: `uv run pre-commit install`
+  - Hooks run automatically on `git commit`, or manually: `uv run pre-commit run --all-files`
+  - Pre-commit runs Ruff with `--fix` and `ruff-format` (excludes `docs/`, `config/`, `lib/`)
+- **Run whitespace check** (for source code changes):
+  - `./scripts/check_whitespace.sh`
+  - Checks for trailing whitespace, tabs vs spaces issues in C/H/Python/Shell/Markdown files
+  - Whitespace-only changes should not be mixed with functional changes
+- **Run docs build check** (if you modified documentation):
+  - `cd docs/_kalico && uv run mkdocs build --strict`
+  - Strict mode fails on any warnings (broken links, missing nav entries, etc.)
+  - Required for all changes to `.md` files in `docs/`
 
 ## Debugging commands
 - Whitespace check: `./scripts/check_whitespace.sh`
