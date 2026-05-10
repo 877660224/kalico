@@ -818,6 +818,7 @@ class TemperatureDataCollector:
 
             stability_window = 5
             stable_start = None
+            stable_confirmed_time = None
             check_interval = 1.0
             last_temps = []
 
@@ -833,6 +834,7 @@ class TemperatureDataCollector:
                     if temp_range <= tolerance:
                         if stable_start is None:
                             stable_start = self.reactor.monotonic()
+                            stable_confirmed_time = self.reactor.monotonic()
                         elif (
                             self.reactor.monotonic() - stable_start
                         ) >= stability_window:
@@ -842,12 +844,14 @@ class TemperatureDataCollector:
                             break
                     else:
                         stable_start = None
+                        stable_confirmed_time = None
 
                 self.reactor.pause(self.reactor.monotonic() + check_interval)
         else:
             gcmd.respond_info(
                 f"已达到目标温度，开始稳态数据采集 ({stable_duration}秒)"
             )
+            stable_confirmed_time = None
 
         samples_at_start = len(self.data_buffer)
         measurement_start = self.reactor.monotonic()
@@ -863,17 +867,26 @@ class TemperatureDataCollector:
             if elapsed >= stable_duration:
                 break
 
+            time_since_stable = (
+                current_time - stable_confirmed_time
+                if stable_confirmed_time is not None
+                else 0.0
+            )
             if (
                 not extrusion_started
                 and extrude_speed > 0
-                and elapsed >= STABILITY_BEFORE_EXTRUDE
+                and time_since_stable >= STABILITY_BEFORE_EXTRUDE
             ):
                 extrude_time = (
-                    stable_duration - STABILITY_BEFORE_EXTRUDE
+                    stable_duration
+                    - STABILITY_BEFORE_EXTRUDE
+                    - (measurement_start - stable_confirmed_time)
                     if extrude_duration <= 0
                     else min(
                         extrude_duration,
-                        stable_duration - STABILITY_BEFORE_EXTRUDE,
+                        stable_duration
+                        - STABILITY_BEFORE_EXTRUDE
+                        - (measurement_start - stable_confirmed_time),
                     )
                 )
                 distance = extrude_speed * extrude_time / 60.0
